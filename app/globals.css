@@ -1,26 +1,89 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* superficies y texto (claro) */
+  --background: #f4f3f0;
+  --foreground: #1a1a17;
+  --card: #ffffff;
+  --card-foreground: #1a1a17;
+  --popover: #ffffff;
+  --popover-foreground: #1a1a17;
+  --muted: #f2f0ea;
+  --muted-foreground: #8a857e;
+  --border: rgba(0,0,0,0.06);
+  --input: rgba(0,0,0,0.10);
+  --ring: #10b981;
+  /* marca / acción */
+  --primary: #10b981;
+  --primary-foreground: #062e22;
+  --secondary: #ffffff;
+  --secondary-foreground: #1a1a17;
+  --destructive: #c9584f;
+  --destructive-foreground: #ffffff;
+  /* tokens propios de Growly */
+  --acc: #0a7a5a;
+  --forest: #12211c;
+  --field: #faf8f4;
+  --track: #eeece6;
+  --success: #10b981;
+  --warning: #e0ad2e;
+  --info: #3b82f6;
+  --radius: 0.9375rem; /* 15px botón/input */
+}
+
+.dark {
+  --background: #0a0b0c;
+  --foreground: #f2f2ef;
+  --card: #141516;
+  --card-foreground: #f2f2ef;
+  --popover: #141516;
+  --popover-foreground: #f2f2ef;
+  --muted: #1e1f21;
+  --muted-foreground: #8a8a8c;
+  --border: rgba(255,255,255,0.08);
+  --input: rgba(255,255,255,0.12);
+  --ring: #34d399;
+  --primary: #10b981;
+  --primary-foreground: #062e22;
+  --secondary: #141516;
+  --secondary-foreground: #f2f2ef;
+  --acc: #34d399;
+  --forest: #12211c;
+  --field: #1b1c1d;
+  --track: #26282a;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-acc: var(--acc);
+  --color-forest: var(--forest);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  --radius-sm: 0.5rem;   /* 8 chip */
+  --radius-md: 0.9375rem;/* 15 botón */
+  --radius-lg: 1.375rem; /* 22 tarjeta */
+  --font-sans: var(--font-manrope);
+  --font-mono: var(--font-plex-mono);
+  /* extra: shadcn Card (generado por la CLI actual) usa font-heading */
+  --font-heading: var(--font-sans);
+  --shadow-card: 0 4px 14px -9px rgba(0,0,0,.2);
+  --shadow-elev: 0 14px 30px -12px rgba(18,33,28,.4);
+  --shadow-glow: 0 10px 22px -6px rgba(16,185,129,.6);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
+body { background: var(--background); color: var(--foreground); }
