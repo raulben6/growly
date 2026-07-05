@@ -8,6 +8,7 @@ describe('primitivos de UI', () => {
     render(<Button>Añadir</Button>)
     const btn = screen.getByRole('button', { name: 'Añadir' })
     expect(btn.className).toContain('bg-primary')
+    expect(btn.className).toContain('rounded-md')
   })
   it('Wordmark muestra Growly', () => {
     render(<><LogoMark /><Wordmark /></>)
