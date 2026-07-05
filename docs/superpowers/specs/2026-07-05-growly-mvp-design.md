@@ -215,7 +215,7 @@ Validación con **Zod** en cada action; revalidación de rutas afectadas tras mu
 Auth.js (NextAuth v5) con:
 - **Credentials provider**: email + contraseña con hash **bcrypt**.
 - **Google OAuth**.
-- Adapter de Prisma; sesión por JWT o base de datos.
+- Adapter de Prisma; **sesión por JWT** (stateless, sin tabla de sesión en cada request).
 - `middleware.ts` redirige a `/login` si no hay sesión en el grupo `(app)`.
 - Recuperación de contraseña: genera token, envía enlace (proveedor de correo a definir en
   implementación; en dev puede loguearse el enlace).
