@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  passwordHash  String?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  accounts      Account[]
+  categories    Category[]
+  transactions  Transaction[]
+  authAccounts  AuthAccount[]
+  sessions      Session[]
+}
+
+model AuthAccount {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+  @@unique([identifier, token])
+}
+
+enum AccountType {
+  CHECKING
+  SAVINGS
+  CASH
+  CREDIT_CARD
+}
+
+model Account {
+  id             String      @id @default(cuid())
+  userId         String
+  name           String
+  bankName       String?
+  type           AccountType @default(CHECKING)
+  currency       String      @default("USD")
+  colorHex       String      @default("#10B981")
+  icon           String?
+  initialBalance Int         @default(0)
+  archived       Boolean     @default(false)
+  creditLimit    Int?
+  statementDay   Int?
+  dueDay         Int?
+  apr            Float?
+  minPayment     Int?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions   Transaction[] @relation("AccountTransactions")
+  transfersIn    Transaction[] @relation("TransferAccount")
+  @@index([userId])
+}
+
+enum CategoryKind {
+  INCOME
+  EXPENSE
+}
+
+model Category {
+  id        String       @id @default(cuid())
+  userId    String?
+  name      String
+  icon      String?
+  colorHex  String       @default("#8A857E")
+  kind      CategoryKind @default(EXPENSE)
+  isSystem  Boolean      @default(false)
+  createdAt DateTime     @default(now())
+  user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  @@index([userId])
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+  TRANSFER
+}
+
+enum TransactionStatus {
+  CLEARED
+  PENDING
+}
+
+model Transaction {
+  id                String            @id @default(cuid())
+  userId            String
+  accountId         String
+  categoryId        String?
+  type              TransactionType
+  amount            Int
+  currency          String            @default("USD")
+  description       String
+  date              DateTime
+  status            TransactionStatus @default(CLEARED)
+  notes             String?
+  transferAccountId String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account         Account   @relation("AccountTransactions", fields: [accountId], references: [id], onDelete: Cascade)
+  transferAccount Account?  @relation("TransferAccount", fields: [transferAccountId], references: [id])
+  category        Category? @relation(fields: [categoryId], references: [id])
+  @@index([userId, date])
+  @@index([accountId])
+}
