@@ -22,7 +22,22 @@ Rama: feature/fase-0-fundaciones
 - Task 6: complete (commits 80cfe0a..16fc4bf, review Approved; pantallas de entrada + e2e real registro→dashboard)
 - Task 7: complete (commits 5f94241..0f1b4f7, review Approved; shell sidebar/topbar/tema, layout (app) con guard auth())
 - Task 8: complete (commits c79ecf8..befaae0, review Approved; rutas placeholder, app/page.tsx scaffold eliminado)
-- === FASE 0 COMPLETA: 8/8 tareas. Pendiente: revisión final de rama + finishing-a-development-branch ===
+- === FASE 0 COMPLETA: 8/8 tareas ===
+- Revisión final de rama (Opus): "Ready to merge — with fixes", sin Critical. 3 arreglos pre-merge
+  aplicados en `339b037` (postinstall prisma generate; `session.user.id` vía callbacks JWT+augmentación
+  de tipos, verificado por e2e contra `/api/auth/session`; botón Google oculto tras `NEXT_PUBLIC_GOOGLE_ENABLED`).
+- Estado: unit 11/11, build limpio, e2e pasa. LISTA PARA MERGE.
+
+## Backlog Fase 1 (del triaje de la revisión final)
+- **PRIMERO en Fase 1:** separar `lib/auth.ts` en `auth.config.ts` edge-safe (para middleware, sin
+  adapter/prisma/bcrypt) + `auth.ts` Node (con adapter). Adelgaza el bundle edge y prepara el fix de AuthAccount.
+- **Antes de habilitar Google:** remapear `AuthAccount` vs `@auth/prisma-adapter` (renombrar el modelo
+  financiero `Account` o envolver el adapter), luego poner `NEXT_PUBLIC_GOOGLE_ENABLED=true`.
+- **Fixes Fase 1:** icono `paw`→`paw-print` + fallback de icono; `register` verificar resultado de `signIn`;
+  hardening auth (enumeración por timing, `create` no atómico→try/catch P2002); `sidebar` active-state exacto.
+- **Aceptados/won't-fix Fase 0:** deprecación `middleware`→`proxy` (warning), campo `engines`, `label.tsx`
+  `use client`, tokens vestigiales (`--radius`, `--shadow-elev/glow`, `--field`/`--track`), `Card`/`tw-animate-css`
+  sin usar, vulns moderadas del template (monitorear con `npm audit`).
 
 ## Decisiones de arquitectura (para fases futuras)
 - shadcn actual (v4.13) usa **Base UI (`base-nova`)**, NO Radix. Los primitivos futuros
