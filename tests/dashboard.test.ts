@@ -1,8 +1,9 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import {
   monthlyTotals, categoryBreakdown, upcomingPayments, recentTransactions,
-  type DashTx,
+  getDashboardData, type DashTx,
 } from '@/lib/dashboard'
+import { prisma } from '@/lib/prisma'
 
 const cats = [
   { id: 'c1', name: 'Comida', colorHex: '#3B82F6' },
@@ -50,5 +51,41 @@ describe('upcomingPayments / recentTransactions', () => {
   })
   it('recent: orden desc por fecha', () => {
     expect(recentTransactions(txns, 2).map((t) => t.id)).toEqual(['a', 'b'])
+  })
+})
+
+describe.skipIf(!process.env.DATABASE_URL)('getDashboardData', () => {
+  const email = `dash_${Date.now()}@growly.app`
+  const now = new Date('2026-07-06T12:00:00Z')
+  let userId = ''
+  let accountId = ''
+  beforeAll(async () => {
+    const u = await prisma.user.create({ data: { name: 'Dash', email } })
+    userId = u.id
+    const a = await prisma.account.create({ data: { userId, name: 'C', type: 'CHECKING', initialBalance: 1000000 } })
+    accountId = a.id
+    await prisma.transaction.createMany({
+      data: [
+        { userId, accountId, type: 'INCOME', amount: 300000, description: 'Nómina', date: new Date('2026-07-04'), status: 'CLEARED' },
+        { userId, accountId, type: 'EXPENSE', amount: 90000, description: 'Súper', date: new Date('2026-07-05'), status: 'CLEARED' },
+        { userId, accountId, type: 'EXPENSE', amount: 50000, description: 'Alquiler', date: new Date('2026-07-20'), status: 'PENDING' },
+      ],
+    })
+  })
+  afterAll(async () => {
+    await prisma.transaction.deleteMany({ where: { userId } })
+    await prisma.account.deleteMany({ where: { userId } })
+    await prisma.user.delete({ where: { id: userId } })
+  })
+
+  it('reúne totales, disponible/comprometido y KPIs del mes', async () => {
+    const d = await getDashboardData(userId, now)
+    // saldo cleared = 1,000,000 + 300,000 - 90,000 = 1,210,000
+    expect(d.total).toBe(1210000)
+    expect(d.comprometido).toBe(50000) // pago pendiente futuro
+    expect(d.disponible).toBe(1210000 - 50000)
+    expect(d.monthly).toEqual({ income: 300000, expense: 90000, savings: 210000, savingsRate: 70 })
+    expect(d.upcoming.length).toBe(1)
+    expect(d.recent.length).toBeGreaterThan(0)
   })
 })

@@ -58,3 +58,40 @@ export function upcomingPayments<T extends { date: Date; status?: 'CLEARED' | 'P
 export function recentTransactions<T extends { date: Date }>(txns: T[], limit = 5): T[] {
   return [...txns].sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, limit)
 }
+
+import { getAccountsWithBalances } from '@/lib/accounts'
+import { getTransactionsForUser } from '@/lib/transactions'
+import { getCategoriesForUser } from '@/lib/categories'
+
+export async function getDashboardData(userId: string, now: Date) {
+  const [{ accounts }, txns, categories] = await Promise.all([
+    getAccountsWithBalances(userId),
+    getTransactionsForUser(userId),
+    getCategoriesForUser(userId),
+  ])
+
+  const total = accounts
+    .filter((a) => a.type !== 'CREDIT_CARD')
+    .reduce((s, a) => s + a.balance, 0)
+
+  const upcoming = upcomingPayments(txns, now)
+  const comprometido = upcoming
+    .filter((t) => t.type === 'EXPENSE')
+    .reduce((s, t) => s + t.amount, 0)
+
+  return {
+    total,
+    comprometido,
+    disponible: total - comprometido,
+    monthly: monthlyTotals(txns, now.getFullYear(), now.getMonth()),
+    breakdown: categoryBreakdown(
+      txns,
+      categories.map((c) => ({ id: c.id, name: c.name, colorHex: c.colorHex })),
+      now.getFullYear(),
+      now.getMonth(),
+    ),
+    upcoming,
+    recent: recentTransactions(txns, 5),
+    categories,
+  }
+}
