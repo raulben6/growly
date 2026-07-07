@@ -21,6 +21,10 @@ describe('<KpiCard>', () => {
     expect(screen.getByText('$6,120.00')).toBeInTheDocument()
     expect(screen.getByText('▲ 8% vs jun')).toBeInTheDocument()
   })
+  it('con signed, un ahorro negativo muestra el signo −', () => {
+    render(<KpiCard label="Ahorro" cents={-50000} accent="neutral" signed />)
+    expect(screen.getByText('−$500.00')).toBeInTheDocument()
+  })
 })
 
 describe('<CategoryDonut>', () => {

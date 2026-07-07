@@ -89,3 +89,32 @@ describe.skipIf(!process.env.DATABASE_URL)('getDashboardData', () => {
     expect(d.recent.length).toBeGreaterThan(0)
   })
 })
+
+describe.skipIf(!process.env.DATABASE_URL)('getDashboardData: comprometido no se limita a los 3 mostrados', () => {
+  const email = `dashcap_${Date.now()}@growly.app`
+  const now = new Date('2026-07-06T12:00:00Z')
+  let userId = ''
+  beforeAll(async () => {
+    const u = await prisma.user.create({ data: { name: 'DashCap', email } })
+    userId = u.id
+    const a = await prisma.account.create({ data: { userId, name: 'C', type: 'CHECKING', initialBalance: 0 } })
+    await prisma.transaction.createMany({
+      data: [7, 8, 9, 10].map((day) => ({
+        userId, accountId: a.id, type: 'EXPENSE' as const, amount: 10000,
+        description: `p${day}`, date: new Date(`2026-07-${day < 10 ? '0' + day : day}`), status: 'PENDING' as const,
+      })),
+    })
+  })
+  afterAll(async () => {
+    await prisma.transaction.deleteMany({ where: { userId } })
+    await prisma.account.deleteMany({ where: { userId } })
+    await prisma.user.delete({ where: { id: userId } })
+  })
+
+  it('suma los 4 pendientes en comprometido pero muestra solo 3', async () => {
+    const d = await getDashboardData(userId, now)
+    expect(d.comprometido).toBe(40000) // los 4 pendientes futuros
+    expect(d.upcoming.length).toBe(3)  // display limitado a 3
+    expect(d.disponible).toBe(-40000)  // total 0 − comprometido 40000
+  })
+})

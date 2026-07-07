@@ -74,8 +74,9 @@ export async function getDashboardData(userId: string, now: Date) {
     .filter((a) => a.type !== 'CREDIT_CARD')
     .reduce((s, a) => s + a.balance, 0)
 
-  const upcoming = upcomingPayments(txns, now)
-  const comprometido = upcoming
+  // comprometido debe sumar TODOS los pagos pendientes futuros, no solo los 3 que se muestran
+  const allUpcoming = upcomingPayments(txns, now, Infinity)
+  const comprometido = allUpcoming
     .filter((t) => t.type === 'EXPENSE')
     .reduce((s, t) => s + t.amount, 0)
 
@@ -90,7 +91,7 @@ export async function getDashboardData(userId: string, now: Date) {
       now.getFullYear(),
       now.getMonth(),
     ),
-    upcoming,
+    upcoming: allUpcoming.slice(0, 3),
     recent: recentTransactions(txns, 5),
     categories,
   }

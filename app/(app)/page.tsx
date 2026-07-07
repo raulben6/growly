@@ -20,7 +20,7 @@ export default async function DashboardPage() {
         <div className="md:col-span-1"><BalanceHero disponible={d.disponible} total={d.total} comprometido={d.comprometido} /></div>
         <KpiCard label="Ingresos" cents={d.monthly.income} accent="income" />
         <KpiCard label="Gastos" cents={d.monthly.expense} accent="expense" />
-        <KpiCard label="Ahorro" cents={d.monthly.savings} accent="neutral" subtitle={`${d.monthly.savingsRate}% tasa`} />
+        <KpiCard label="Ahorro" cents={d.monthly.savings} accent="neutral" signed subtitle={`${d.monthly.savingsRate}% tasa`} />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
