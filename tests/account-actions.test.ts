@@ -41,4 +41,14 @@ describe.skipIf(!process.env.DATABASE_URL)('account actions', () => {
     expect(res.ok).toBe(true)
     expect((await prisma.account.findFirst({ where: { userId, archived: false } }))).toBeNull()
   })
+
+  it('createAccount devuelve {ok:false} si la DB lanza (usuario inexistente → FK)', async () => {
+    const real = userId
+    userId = 'usuario-inexistente-000000' // no existe → viola la FK userId
+    const res = await createAccount({
+      name: 'Y', type: 'CASH', currency: 'USD', colorHex: '#10B981', initialBalance: 0,
+    })
+    userId = real
+    expect(res.ok).toBe(false)
+  })
 })

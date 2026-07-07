@@ -14,7 +14,11 @@ export async function createAccount(values: unknown) {
     return { ok: false as const, error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
   }
 
-  await createAccountForUser(session.user.id, parsed.data)
+  try {
+    await createAccountForUser(session.user.id, parsed.data)
+  } catch {
+    return { ok: false as const, error: 'No se pudo crear la cuenta' }
+  }
   revalidatePath('/cuentas')
   return { ok: true as const }
 }
@@ -23,7 +27,11 @@ export async function archiveAccount(accountId: string) {
   const session = await auth()
   if (!session?.user?.id) return { ok: false as const, error: 'No autenticado' }
 
-  await archiveAccountForUser(session.user.id, accountId)
+  try {
+    await archiveAccountForUser(session.user.id, accountId)
+  } catch {
+    return { ok: false as const, error: 'No se pudo archivar la cuenta' }
+  }
   revalidatePath('/cuentas')
   return { ok: true as const }
 }
