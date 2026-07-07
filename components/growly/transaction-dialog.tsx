@@ -96,7 +96,7 @@ export function TransactionDialog({
       <DialogTrigger
         render={
           <Button className="h-11 font-extrabold">
-            <Plus size={18} /> Añadir
+            <Plus size={18} /> Añadir movimiento
           </Button>
         }
       />
