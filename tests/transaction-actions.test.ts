@@ -39,6 +39,22 @@ describe.skipIf(!process.env.DATABASE_URL)('transaction actions', () => {
     expect(res.ok).toBe(false)
   })
 
+  it('createTransaction rechaza auto-transferencia (origen === destino)', async () => {
+    const res = await createTransaction({
+      type: 'TRANSFER', amount: 5000, accountId, transferAccountId: accountId,
+      description: 'x', date: '2026-07-06', currency: 'USD',
+    })
+    expect(res.ok).toBe(false)
+  })
+
+  it('createTransaction rechaza cuenta ajena/inexistente', async () => {
+    const res = await createTransaction({
+      type: 'EXPENSE', amount: 5000, accountId: 'cuenta-inexistente-000',
+      description: 'x', date: '2026-07-06', currency: 'USD',
+    })
+    expect(res.ok).toBe(false)
+  })
+
   it('deleteTransaction borra el movimiento', async () => {
     const t = await prisma.transaction.findFirst({ where: { userId } })
     const res = await deleteTransaction(t!.id)

@@ -25,21 +25,21 @@ const dayKey = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
 export function groupTransactionsByDay<T extends { date: Date }>(
   txns: T[],
   now: Date,
-): { label: string; items: T[] }[] {
+): { label: string; key: string; items: T[] }[] {
   const sorted = [...txns].sort((a, b) => b.date.getTime() - a.date.getTime())
   const todayKey = dayKey(now)
   const yesterday = new Date(now)
   yesterday.setDate(now.getDate() - 1)
   const yKey = dayKey(yesterday)
 
-  const groups: { label: string; items: T[] }[] = []
-  const index = new Map<string, { label: string; items: T[] }>()
+  const groups: { label: string; key: string; items: T[] }[] = []
+  const index = new Map<string, { label: string; key: string; items: T[] }>()
   for (const t of sorted) {
     const key = dayKey(t.date)
     let g = index.get(key)
     if (!g) {
       const label = key === todayKey ? 'Hoy' : key === yKey ? 'Ayer' : `${t.date.getDate()} ${MESES[t.date.getMonth()]}`
-      g = { label, items: [] }
+      g = { label, key, items: [] }
       index.set(key, g)
       groups.push(g)
     }

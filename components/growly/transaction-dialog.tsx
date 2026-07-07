@@ -178,6 +178,7 @@ export function TransactionDialog({
                 <select
                   id="transferAccountId"
                   name="transferAccountId"
+                  defaultValue={accounts[1]?.id ?? accounts[0]?.id}
                   className={selectCls}
                 >
                   {accounts.map((a) => (

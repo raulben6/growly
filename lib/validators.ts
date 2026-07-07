@@ -44,5 +44,9 @@ export const transactionSchema = z
     message: 'La transferencia requiere cuenta destino',
     path: ['transferAccountId'],
   })
+  .refine((d) => d.type !== 'TRANSFER' || d.transferAccountId !== d.accountId, {
+    message: 'Origen y destino deben ser distintos',
+    path: ['transferAccountId'],
+  })
 
 export type TransactionFormValues = z.infer<typeof transactionSchema>

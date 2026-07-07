@@ -62,7 +62,7 @@ export default async function MovimientosPage({
 
       <div className="flex flex-col gap-5">
         {groups.map((g) => (
-          <div key={g.label}>
+          <div key={g.key}>
             <div className="mb-2 px-1 text-xs font-bold tracking-wide text-muted-foreground">{g.label.toUpperCase()}</div>
             <div className="rounded-[22px] border border-border bg-card px-5 shadow-[var(--shadow-card)]">
               {g.items.map((t) => {
