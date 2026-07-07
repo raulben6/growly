@@ -7,7 +7,7 @@ const email = `test_${Date.now()}@growly.app`
 
 describe.skipIf(!process.env.DATABASE_URL)('registerUser', () => {
   beforeEach(async () => { await prisma.user.deleteMany({ where: { email } }) })
-  afterAll(async () => { await prisma.user.deleteMany({ where: { email: { contains: '@growly.app' } } }) })
+  afterAll(async () => { await prisma.user.deleteMany({ where: { email } }) })
 
   it('crea el usuario con la contraseña hasheada', async () => {
     const res = await registerUser({ name: 'Test User', email, password: 'supersecret' })
