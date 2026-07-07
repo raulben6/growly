@@ -33,7 +33,9 @@ export default function LoginPage() {
       <Link href="/forgot-password" className="text-right text-sm font-bold text-acc">¿Olvidaste tu contraseña?</Link>
       {error && <p className="text-sm text-destructive">{error}</p>}
       <Button type="submit" disabled={loading} className="h-12 font-extrabold">Entrar</Button>
-      <Button type="button" variant="secondary" className="h-12" onClick={() => signIn('google', { callbackUrl: '/' })}>Google</Button>
+      {process.env.NEXT_PUBLIC_GOOGLE_ENABLED === 'true' && (
+        <Button type="button" variant="secondary" className="h-12" onClick={() => signIn('google', { callbackUrl: '/' })}>Google</Button>
+      )}
       <p className="text-center text-sm text-muted-foreground">¿No tienes cuenta? <Link href="/register" className="text-acc font-bold">Regístrate</Link></p>
     </form>
   )

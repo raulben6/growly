@@ -8,4 +8,9 @@ test('registro redirige al dashboard', async ({ page }) => {
   await page.getByLabel('Contraseña').fill('supersecret')
   await page.getByRole('button', { name: 'Crear cuenta' }).click()
   await expect(page).toHaveURL('http://localhost:3000/')
+
+  await page.goto('http://localhost:3000/api/auth/session')
+  const json = JSON.parse((await page.locator('body').textContent()) ?? '{}')
+  expect(typeof json.user?.id).toBe('string')
+  expect(json.user.id.length).toBeGreaterThan(0)
 })
