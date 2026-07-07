@@ -10,7 +10,7 @@ Rama: feature/fase-0-fundaciones
 - [x] Task 4: Seed de 20 categorías
 - [x] Task 5: Backend de auth (Auth.js + registro)
 - [x] Task 6: Pantallas de entrada (login/registro/recuperar)
-- [ ] Task 7: Shell de la app (sidebar/topbar/tema)
+- [x] Task 7: Shell de la app (sidebar/topbar/tema)
 - [ ] Task 8: Rutas placeholder
 
 ## Bitácora
@@ -20,6 +20,7 @@ Rama: feature/fase-0-fundaciones
 - Task 4: complete (commits 6e7fc85..94693b0, review clean; 20 categorías sembradas, idempotente)
 - Task 5: complete (commits b68859e..5d187c7, review Approved; auth Credentials+bcrypt+JWT, Google condicional)
 - Task 6: complete (commits 80cfe0a..16fc4bf, review Approved; pantallas de entrada + e2e real registro→dashboard)
+- Task 7: complete (commits 5f94241..0f1b4f7, review Approved; shell sidebar/topbar/tema, layout (app) con guard auth())
 
 ## Decisiones de arquitectura (para fases futuras)
 - shadcn actual (v4.13) usa **Base UI (`base-nova`)**, NO Radix. Los primitivos futuros
@@ -44,3 +45,4 @@ Rama: feature/fase-0-fundaciones
 - Task 4: `icon: 'paw'` (Mascotas) probablemente no existe en lucide-react (usar `paw-print`). Corregir al construir la UI de categorías en Fase 1 y añadir fallback de icono para nombres desconocidos. Nota: la fila ya sembrada no se actualiza al re-correr el seed (idempotencia por `name`); habrá que actualizarla o re-seedear.
 - Task 5 (hardening auth, Minor — decidir en revisión final): (a) enumeración por timing en `authorize` (correr un `bcrypt.compare` dummy cuando el usuario no existe); (b) registro: `findUnique`+`create` no atómico → envolver `create` en try/catch y mapear P2002 a `{ ok:false }`; (c) `middleware.ts` usa `startsWith` para páginas de auth (podría matchear `/loginX`); (d) `requestPasswordReset` no valida el email con Zod.
 - Task 6 (Minor): (a) `register/page.tsx` no verifica el resultado de `signIn` antes de `router.push('/')` → si falla el signin post-registro, rebota a /login sin explicación; (b) botón "Enviar enlace" de forgot-password sin estado loading/disabled (doble clic).
+- Task 7 (Minor): (a) `sidebar.tsx` icono activo con `text-primary` dentro de un Link `text-white` → estilo ambiguo/muerto; (b) `startsWith(href)` marcaría activo un futuro `/cuentas-viejas` (footgun si se añaden rutas hermanas).
