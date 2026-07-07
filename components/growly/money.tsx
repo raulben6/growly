@@ -5,14 +5,22 @@ export function Money({
   cents,
   withCents = true,
   currency = 'USD',
+  signed = false,
   className,
 }: {
   cents: number
   withCents?: boolean
   currency?: string
+  signed?: boolean
   className?: string
 }) {
-  return <span className={className}>{formatMoney(cents, { withCents, currency })}</span>
+  const prefix = signed && cents < 0 ? '−' : ''
+  return (
+    <span className={className}>
+      {prefix}
+      {formatMoney(cents, { withCents, currency })}
+    </span>
+  )
 }
 
 export function SignedAmount({

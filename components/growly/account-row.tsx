@@ -19,7 +19,7 @@ export function AccountRow({
         <div className="text-sm font-bold text-foreground">{name}</div>
         <div className="text-xs text-muted-foreground">{subtitle}</div>
       </div>
-      <Money cents={balance} className="text-base font-extrabold text-foreground" />
+      <Money cents={balance} signed className="text-base font-extrabold text-foreground" />
     </div>
   )
 }
