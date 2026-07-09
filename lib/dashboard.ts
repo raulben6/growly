@@ -94,7 +94,11 @@ export async function getDashboardData(userId: string, now: Date) {
       now.getMonth(),
     ),
     upcoming: allUpcoming.slice(0, 3),
-    recent: recentTransactions(txns, 5),
+    // recientes = lo ya ocurrido; los PENDING futuros (p. ej. recurrencias materializadas) no son "recientes"
+    recent: recentTransactions(
+      txns.filter((t) => !(t.status === 'PENDING' && t.date.getTime() > now.getTime())),
+      5,
+    ),
     categories,
   }
 }

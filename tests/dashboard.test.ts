@@ -147,5 +147,7 @@ describe.skipIf(!process.env.DATABASE_URL)('getDashboardData materializa recurre
     // mensual desde now+5d dentro de 90 días → 3 ocurrencias de $30.00
     expect(d.comprometido).toBe(9000)
     expect(d.upcoming[0].description).toBe('Gimnasio')
+    // los PENDING futuros materializados NO aparecen en "recientes" (este usuario no tiene movimientos reales)
+    expect(d.recent.length).toBe(0)
   })
 })
