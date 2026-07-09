@@ -4,6 +4,7 @@ import {
   getDashboardData, type DashTx,
 } from '@/lib/dashboard'
 import { prisma } from '@/lib/prisma'
+import { addDaysUTC } from '@/lib/recurrence'
 
 const cats = [
   { id: 'c1', name: 'Comida', colorHex: '#3B82F6' },
@@ -116,5 +117,35 @@ describe.skipIf(!process.env.DATABASE_URL)('getDashboardData: comprometido no se
     expect(d.comprometido).toBe(40000) // los 4 pendientes futuros
     expect(d.upcoming.length).toBe(3)  // display limitado a 3
     expect(d.disponible).toBe(-40000)  // total 0 − comprometido 40000
+  })
+})
+
+describe.skipIf(!process.env.DATABASE_URL)('getDashboardData materializa recurrencias', () => {
+  const email = `dashrec_${Date.now()}@growly.app`
+  const now2 = new Date()
+  let uid = ''
+  beforeAll(async () => {
+    const u = await prisma.user.create({ data: { name: 'DashRec', email } })
+    uid = u.id
+    const a = await prisma.account.create({ data: { userId: uid, name: 'C', type: 'CHECKING', initialBalance: 0 } })
+    await prisma.recurringRule.create({
+      data: {
+        userId: uid, accountId: a.id, type: 'EXPENSE', amount: 3000, description: 'Gimnasio',
+        frequency: 'MONTHLY', startDate: addDaysUTC(now2, 5),
+      },
+    })
+  })
+  afterAll(async () => {
+    await prisma.transaction.deleteMany({ where: { userId: uid } })
+    await prisma.recurringRule.deleteMany({ where: { userId: uid } })
+    await prisma.account.deleteMany({ where: { userId: uid } })
+    await prisma.user.delete({ where: { id: uid } })
+  })
+
+  it('las ocurrencias generadas alimentan comprometido y próximos pagos', async () => {
+    const d = await getDashboardData(uid, now2)
+    // mensual desde now+5d dentro de 90 días → 3 ocurrencias de $30.00
+    expect(d.comprometido).toBe(9000)
+    expect(d.upcoming[0].description).toBe('Gimnasio')
   })
 })

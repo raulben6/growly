@@ -62,8 +62,10 @@ export function recentTransactions<T extends { date: Date }>(txns: T[], limit = 
 import { getAccountsWithBalances } from '@/lib/accounts'
 import { getTransactionsForUser } from '@/lib/transactions'
 import { getCategoriesForUser } from '@/lib/categories'
+import { materializeRecurringForUser } from '@/lib/recurring'
 
 export async function getDashboardData(userId: string, now: Date) {
+  await materializeRecurringForUser(userId, now)
   const [{ accounts }, txns, categories] = await Promise.all([
     getAccountsWithBalances(userId),
     getTransactionsForUser(userId),

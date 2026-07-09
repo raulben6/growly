@@ -4,8 +4,13 @@ import { redirect } from 'next/navigation'
 import { getTransactionsForUser, groupTransactionsByDay } from '@/lib/transactions'
 import { getAccountsForUser } from '@/lib/accounts'
 import { getCategoriesForUser } from '@/lib/categories'
+import { getRecurringRulesForUser, materializeRecurringForUser } from '@/lib/recurring'
+import { describeFrequency, nextDateForRule, formatShortDateUTC } from '@/lib/recurrence'
 import { TransactionRow } from '@/components/growly/transaction-row'
 import { TransactionDialog } from '@/components/growly/transaction-dialog'
+import { RecurringRow } from '@/components/growly/recurring-row'
+import { RecurringDialog } from '@/components/growly/recurring-dialog'
+import { ConfirmTransactionButton } from '@/components/growly/confirm-transaction-button'
 
 const FILTERS = [
   { key: undefined, label: 'Todos', href: '/movimientos' },
@@ -13,35 +18,73 @@ const FILTERS = [
   { key: 'EXPENSE' as const, label: 'Gastos', href: '/movimientos?tipo=gastos' },
 ]
 
+const tabCls = (active: boolean) =>
+  `rounded-[11px] px-4 py-2 text-sm font-bold ${
+    active ? 'bg-forest text-white' : 'border border-border bg-card text-muted-foreground'
+  }`
+
 export default async function MovimientosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tipo?: string }>
+  searchParams: Promise<{ tipo?: string; vista?: string }>
 }) {
   const session = await auth()
   if (!session?.user?.id) redirect('/login')
   const userId = session.user.id
-  const { tipo } = await searchParams
-  const kind = tipo === 'ingresos' ? 'INCOME' : tipo === 'gastos' ? 'EXPENSE' : undefined
+  const { tipo, vista } = await searchParams
+  const now = new Date()
+  const recurrentes = vista === 'recurrentes'
 
-  const [txns, accounts, categories] = await Promise.all([
-    getTransactionsForUser(userId, kind ? { kind } : {}),
+  await materializeRecurringForUser(userId, now)
+
+  const [accounts, categories] = await Promise.all([
     getAccountsForUser(userId),
     getCategoriesForUser(userId),
   ])
-  const catById = new Map(categories.map((c) => [c.id, c]))
-  const groups = groupTransactionsByDay(txns, new Date())
+  const accountOpts = accounts.map((a) => ({ id: a.id, name: a.name }))
+  const categoryOpts = categories.map((c) => ({ id: c.id, name: c.name, kind: c.kind }))
 
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-2xl font-extrabold tracking-[-0.02em]">Movimientos</h1>
-        <TransactionDialog
-          accounts={accounts.map((a) => ({ id: a.id, name: a.name }))}
-          categories={categories.map((c) => ({ id: c.id, name: c.name, kind: c.kind }))}
-        />
+        {recurrentes ? (
+          <RecurringDialog accounts={accountOpts} categories={categoryOpts} />
+        ) : (
+          <TransactionDialog accounts={accountOpts} categories={categoryOpts} />
+        )}
       </div>
 
+      <div className="mb-5 flex gap-2">
+        <Link href="/movimientos" className={tabCls(!recurrentes)}>Movimientos</Link>
+        <Link href="/movimientos?vista=recurrentes" className={tabCls(recurrentes)}>Recurrentes</Link>
+      </div>
+
+      {recurrentes ? (
+        <RecurrentesView userId={userId} now={now}
+          accountOpts={accountOpts} categoryOpts={categoryOpts} />
+      ) : (
+        <MovimientosView userId={userId} tipo={tipo} now={now} categories={categories} />
+      )}
+    </div>
+  )
+}
+
+async function MovimientosView({
+  userId, tipo, now, categories,
+}: {
+  userId: string
+  tipo?: string
+  now: Date
+  categories: { id: string; name: string; icon: string | null }[]
+}) {
+  const kind = tipo === 'ingresos' ? 'INCOME' : tipo === 'gastos' ? 'EXPENSE' : undefined
+  const txns = await getTransactionsForUser(userId, kind ? { kind } : {})
+  const catById = new Map(categories.map((c) => [c.id, c]))
+  const groups = groupTransactionsByDay(txns, now)
+
+  return (
+    <>
       <div className="mb-5 flex gap-2">
         {FILTERS.map((f) => {
           const active = f.key === kind
@@ -70,6 +113,8 @@ export default async function MovimientosPage({
                 const time = new Date(t.date).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })
                 const kindLabel = t.type === 'INCOME' ? 'Ingreso' : t.type === 'TRANSFER' ? 'Transferencia' : (cat?.name ?? 'Gasto')
                 const signed = t.type === 'INCOME' ? t.amount : -t.amount
+                const isPending = t.status === 'PENDING'
+                const overdue = isPending && new Date(t.date).getTime() <= now.getTime()
                 return (
                   <TransactionRow
                     key={t.id}
@@ -77,6 +122,10 @@ export default async function MovimientosPage({
                     meta={`${kindLabel} · ${time}`}
                     signedCents={signed}
                     iconName={cat?.icon ?? 'ellipsis'}
+                    badge={isPending
+                      ? { label: overdue ? 'Vencido' : 'Programado', tone: overdue ? 'danger' : 'muted' }
+                      : undefined}
+                    action={overdue ? <ConfirmTransactionButton id={t.id} /> : undefined}
                   />
                 )
               })}
@@ -84,6 +133,63 @@ export default async function MovimientosPage({
           </div>
         ))}
       </div>
+    </>
+  )
+}
+
+async function RecurrentesView({
+  userId, now, accountOpts, categoryOpts,
+}: {
+  userId: string
+  now: Date
+  accountOpts: { id: string; name: string }[]
+  categoryOpts: { id: string; name: string; kind: 'INCOME' | 'EXPENSE' }[]
+}) {
+  const rules = await getRecurringRulesForUser(userId)
+
+  if (rules.length === 0) {
+    return (
+      <div className="rounded-[22px] border border-border bg-card p-10 text-center shadow-[var(--shadow-card)]">
+        <p className="text-sm text-muted-foreground">
+          Sin recurrencias. Crea la primera (Netflix, alquiler, nómina…) y Growly programará los próximos pagos por ti.
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="rounded-[22px] border border-border bg-card px-5 shadow-[var(--shadow-card)]">
+      {rules.map((r) => {
+        const next = r.active ? nextDateForRule(r, now) : null
+        return (
+          <RecurringRow
+            key={r.id}
+            accounts={accountOpts}
+            categories={categoryOpts}
+            rule={{
+              id: r.id,
+              description: r.description,
+              type: r.type as 'INCOME' | 'EXPENSE',
+              amount: r.amount,
+              active: r.active,
+              freqLabel: describeFrequency(r),
+              nextLabel: !r.active ? 'en pausa' : next ? `próxima: ${formatShortDateUTC(next)}` : 'finalizada',
+              accountName: r.account.name,
+              icon: r.category?.icon ?? 'ellipsis',
+              initial: {
+                type: r.type as 'INCOME' | 'EXPENSE',
+                amountStr: (r.amount / 100).toFixed(2),
+                description: r.description,
+                accountId: r.accountId,
+                categoryId: r.categoryId ?? '',
+                frequency: r.frequency,
+                startDate: r.startDate.toISOString().slice(0, 10),
+                endDate: r.endDate ? r.endDate.toISOString().slice(0, 10) : '',
+              },
+            }}
+          />
+        )
+      })}
     </div>
   )
 }
