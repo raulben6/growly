@@ -50,3 +50,28 @@ export const transactionSchema = z
   })
 
 export type TransactionFormValues = z.infer<typeof transactionSchema>
+
+export const recurringRuleBaseSchema = z
+  .object({
+    type: z.enum(['INCOME', 'EXPENSE']),
+    amount: z.number().int().positive(),
+    accountId: z.string().min(1, 'Cuenta requerida'),
+    categoryId: z.string().nullable().optional(),
+    description: z.string().min(1, 'Descripción requerida'),
+    frequency: z.enum(['WEEKLY', 'BIWEEKLY', 'MONTHLY', 'YEARLY']),
+    startDate: z.coerce.date(),
+    endDate: z.coerce.date().nullable().optional(),
+  })
+  .refine((d) => !d.endDate || d.endDate.getTime() > d.startDate.getTime(), {
+    message: 'La fecha fin debe ser posterior al inicio',
+    path: ['endDate'],
+  })
+
+// Al crear, la primera fecha debe ser reciente/futura (margen de 24h por zonas horarias):
+// evita que una regla "desde enero" inunde la app de PENDING vencidos.
+export const createRecurringRuleSchema = recurringRuleBaseSchema.refine(
+  (d) => d.startDate.getTime() >= Date.now() - 86_400_000,
+  { message: 'La primera fecha debe ser hoy o futura', path: ['startDate'] },
+)
+
+export type RecurringRuleFormValues = z.infer<typeof recurringRuleBaseSchema>
