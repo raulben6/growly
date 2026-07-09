@@ -39,6 +39,12 @@ describe('<ConfirmTransactionButton>', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar' }))
     await waitFor(() => expect(confirmTransaction).toHaveBeenCalledWith('tx9'))
   })
+  it('muestra el error si confirmTransaction falla (Fix 2, review T6)', async () => {
+    vi.mocked(confirmTransaction).mockResolvedValueOnce({ ok: false, error: 'Sin conexión' })
+    render(<ConfirmTransactionButton id="tx9" />)
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar' }))
+    expect(await screen.findByText('Sin conexión')).toBeInTheDocument()
+  })
 })
 
 const initial: RecurringFormInitial = {
@@ -69,6 +75,12 @@ describe('<RecurringRow>', () => {
     expect(screen.getByText('Pausada')).toBeInTheDocument()
     expect(screen.getByTitle('Reanudar')).toBeInTheDocument()
   })
+  it('muestra el error si pausar/reanudar falla (Fix 2, review T6)', async () => {
+    vi.mocked(setRecurringRuleActive).mockResolvedValueOnce({ ok: false, error: 'Sin conexión' })
+    render(<RecurringRow rule={rule} accounts={accounts} categories={categories} />)
+    fireEvent.click(screen.getByTitle('Pausar'))
+    expect(await screen.findByText('Sin conexión')).toBeInTheDocument()
+  })
 })
 
 describe('<RecurringDialog>', () => {
@@ -80,5 +92,37 @@ describe('<RecurringDialog>', () => {
     expect(screen.getByLabelText('Frecuencia')).toBeInTheDocument()
     expect(screen.getByLabelText('Primera fecha')).toBeInTheDocument()
     expect(screen.getByLabelText('Fecha fin (opcional)')).toBeInTheDocument()
+  })
+
+  it('resincroniza `type` al reabrir tras un cambio de `initial` por props (Fix 1, review T6)', async () => {
+    const categoriesBoth = [
+      ...categories,
+      { id: 'c2', name: 'Nómina', kind: 'INCOME' as const },
+    ]
+    const { rerender } = render(
+      <RecurringDialog ruleId="r1" accounts={accounts} categories={categoriesBoth}
+        initial={initial} trigger={<button>Editar</button>} />,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Editar' }))
+    expect(screen.getByText('Ocio')).toBeInTheDocument()
+    expect(screen.queryByText('Nómina')).not.toBeInTheDocument()
+
+    // Cierre: Escape sobre el popup del diálogo (Base UI cierra vía useDismiss/onKeyDown).
+    const dialogEl = screen.getByRole('dialog')
+    fireEvent.keyDown(dialogEl, { key: 'Escape', code: 'Escape' })
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+
+    // Mientras está cerrado, cambia `initial` por props (misma fila, misma instancia).
+    rerender(
+      <RecurringDialog ruleId="r1" accounts={accounts} categories={categoriesBoth}
+        initial={{ ...initial, type: 'INCOME', categoryId: 'c2' }}
+        trigger={<button>Editar</button>} />,
+    )
+
+    // Con el bug (reset solo al cerrar, no al abrir) esto seguiría mostrando 'Ocio'.
+    fireEvent.click(screen.getByRole('button', { name: 'Editar' }))
+    expect(await screen.findByText('Nómina')).toBeInTheDocument()
+    expect(screen.queryByText('Ocio')).not.toBeInTheDocument()
   })
 })

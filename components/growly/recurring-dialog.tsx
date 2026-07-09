@@ -52,11 +52,7 @@ export function RecurringDialog({
   const [type, setType] = useState<RuleType>(initial?.type ?? 'EXPENSE')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-
-  function reset() {
-    setType(initial?.type ?? 'EXPENSE')
-    setError(null)
-  }
+  const uid = React.useId()
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -91,7 +87,6 @@ export function RecurringDialog({
       return
     }
     setOpen(false)
-    reset()
   }
 
   const cats = categories.filter((c) => c.kind === type)
@@ -102,7 +97,10 @@ export function RecurringDialog({
       open={open}
       onOpenChange={(o) => {
         setOpen(o)
-        if (!o) reset()
+        if (o) {
+          setType(initial?.type ?? 'EXPENSE')
+          setError(null)
+        }
       }}
     >
       <DialogTrigger
@@ -136,17 +134,17 @@ export function RecurringDialog({
 
         <form onSubmit={onSubmit} className="flex flex-col gap-3">
           <div>
-            <Label htmlFor="rec-amount">Importe</Label>
-            <Input id="rec-amount" name="amount" inputMode="decimal" placeholder="0.00"
+            <Label htmlFor={`${uid}-amount`}>Importe</Label>
+            <Input id={`${uid}-amount`} name="amount" inputMode="decimal" placeholder="0.00"
               defaultValue={initial?.amountStr} required />
           </div>
           <div>
-            <Label htmlFor="rec-description">Descripción</Label>
-            <Input id="rec-description" name="description" defaultValue={initial?.description} required />
+            <Label htmlFor={`${uid}-description`}>Descripción</Label>
+            <Input id={`${uid}-description`} name="description" defaultValue={initial?.description} required />
           </div>
           <div>
-            <Label htmlFor="rec-categoryId">Categoría</Label>
-            <select id="rec-categoryId" name="categoryId" className={selectCls}
+            <Label htmlFor={`${uid}-categoryId`}>Categoría</Label>
+            <select id={`${uid}-categoryId`} name="categoryId" className={selectCls}
               defaultValue={initial?.categoryId}>
               {cats.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
@@ -154,8 +152,8 @@ export function RecurringDialog({
             </select>
           </div>
           <div>
-            <Label htmlFor="rec-accountId">Cuenta</Label>
-            <select id="rec-accountId" name="accountId" className={selectCls}
+            <Label htmlFor={`${uid}-accountId`}>Cuenta</Label>
+            <select id={`${uid}-accountId`} name="accountId" className={selectCls}
               defaultValue={initial?.accountId}>
               {accounts.map((a) => (
                 <option key={a.id} value={a.id}>{a.name}</option>
@@ -163,8 +161,8 @@ export function RecurringDialog({
             </select>
           </div>
           <div>
-            <Label htmlFor="rec-frequency">Frecuencia</Label>
-            <select id="rec-frequency" name="frequency" className={selectCls}
+            <Label htmlFor={`${uid}-frequency`}>Frecuencia</Label>
+            <select id={`${uid}-frequency`} name="frequency" className={selectCls}
               defaultValue={initial?.frequency ?? 'MONTHLY'}>
               {FRECUENCIAS.map((f) => (
                 <option key={f.value} value={f.value}>{f.label}</option>
@@ -172,13 +170,13 @@ export function RecurringDialog({
             </select>
           </div>
           <div>
-            <Label htmlFor="rec-startDate">Primera fecha</Label>
-            <Input id="rec-startDate" name="startDate" type="date"
+            <Label htmlFor={`${uid}-startDate`}>Primera fecha</Label>
+            <Input id={`${uid}-startDate`} name="startDate" type="date"
               defaultValue={initial?.startDate ?? today} required />
           </div>
           <div>
-            <Label htmlFor="rec-endDate">Fecha fin (opcional)</Label>
-            <Input id="rec-endDate" name="endDate" type="date" defaultValue={initial?.endDate} />
+            <Label htmlFor={`${uid}-endDate`}>Fecha fin (opcional)</Label>
+            <Input id={`${uid}-endDate`} name="endDate" type="date" defaultValue={initial?.endDate} />
           </div>
 
           {error && <p className="text-sm text-destructive">{error}</p>}

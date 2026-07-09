@@ -1,6 +1,6 @@
 'use client'
 
-import { useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { Pause, Play, Pencil, Trash2 } from 'lucide-react'
 import { CategoryIcon } from '@/components/growly/category-icon'
 import { SignedAmount } from '@/components/growly/money'
@@ -34,6 +34,7 @@ export function RecurringRow({
   categories: CategoryOpt[]
 }) {
   const [pending, start] = useTransition()
+  const [error, setError] = useState<string | null>(null)
   const signed = rule.type === 'INCOME' ? rule.amount : -rule.amount
 
   return (
@@ -53,6 +54,7 @@ export function RecurringRow({
         <div className="text-xs text-muted-foreground">
           {rule.freqLabel} · {rule.nextLabel} · {rule.accountName}
         </div>
+        {error && <div className="text-[11px] font-bold text-destructive">{error}</div>}
       </div>
       <SignedAmount cents={signed} className="text-[15px] font-extrabold" />
       <div className="flex items-center gap-1.5">
@@ -60,7 +62,10 @@ export function RecurringRow({
           type="button"
           title={rule.active ? 'Pausar' : 'Reanudar'}
           disabled={pending}
-          onClick={() => start(async () => { await setRecurringRuleActive(rule.id, !rule.active) })}
+          onClick={() => start(async () => {
+            const res = await setRecurringRuleActive(rule.id, !rule.active)
+            setError(res.ok ? null : res.error)
+          })}
           className={iconBtnCls}
         >
           {rule.active ? <Pause size={15} /> : <Play size={15} />}
@@ -80,7 +85,10 @@ export function RecurringRow({
           type="button"
           title="Borrar"
           disabled={pending}
-          onClick={() => start(async () => { await deleteRecurringRule(rule.id) })}
+          onClick={() => start(async () => {
+            const res = await deleteRecurringRule(rule.id)
+            setError(res.ok ? null : res.error)
+          })}
           className={iconBtnCls}
         >
           <Trash2 size={15} />
