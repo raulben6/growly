@@ -21,6 +21,7 @@ model User {
   transactions  Transaction[]
   authAccounts  AuthAccount[]
   sessions      Session[]
+  recurringRules RecurringRule[]
 }
 
 model AuthAccount {
@@ -83,6 +84,7 @@ model Account {
   user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions   Transaction[] @relation("AccountTransactions")
   transfersIn    Transaction[] @relation("TransferAccount")
+  recurringRules RecurringRule[]
   @@index([userId])
 }
 
@@ -102,6 +104,7 @@ model Category {
   createdAt DateTime     @default(now())
   user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
+  recurringRules RecurringRule[]
   @@index([userId])
 }
 
@@ -129,12 +132,44 @@ model Transaction {
   status            TransactionStatus @default(CLEARED)
   notes             String?
   transferAccountId String?
+  recurringRuleId   String?
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   account         Account   @relation("AccountTransactions", fields: [accountId], references: [id], onDelete: Cascade)
   transferAccount Account?  @relation("TransferAccount", fields: [transferAccountId], references: [id])
   category        Category? @relation(fields: [categoryId], references: [id])
+  recurringRule   RecurringRule? @relation(fields: [recurringRuleId], references: [id], onDelete: SetNull)
   @@index([userId, date])
   @@index([accountId])
+  @@unique([recurringRuleId, date])
+}
+
+enum RecurrenceFrequency {
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+  YEARLY
+}
+
+model RecurringRule {
+  id                  String              @id @default(cuid())
+  userId              String
+  accountId           String
+  categoryId          String?
+  type                TransactionType
+  amount              Int
+  description         String
+  frequency           RecurrenceFrequency
+  startDate           DateTime
+  endDate             DateTime?
+  active              Boolean             @default(true)
+  materializedThrough DateTime?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account      Account       @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category     Category?     @relation(fields: [categoryId], references: [id])
+  transactions Transaction[]
+  @@index([userId])
 }
