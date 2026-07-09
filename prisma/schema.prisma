@@ -8,19 +8,19 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  passwordHash  String?
-  image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  accounts      Account[]
-  categories    Category[]
-  transactions  Transaction[]
-  authAccounts  AuthAccount[]
-  sessions      Session[]
+  id             String          @id @default(cuid())
+  name           String?
+  email          String          @unique
+  emailVerified  DateTime?
+  passwordHash   String?
+  image          String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  accounts       Account[]
+  categories     Category[]
+  transactions   Transaction[]
+  authAccounts   AuthAccount[]
+  sessions       Session[]
   recurringRules RecurringRule[]
 }
 
@@ -38,6 +38,7 @@ model AuthAccount {
   id_token          String?
   session_state     String?
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@unique([provider, providerAccountId])
 }
 
@@ -53,6 +54,7 @@ model VerificationToken {
   identifier String
   token      String   @unique
   expires    DateTime
+
   @@unique([identifier, token])
 }
 
@@ -64,27 +66,28 @@ enum AccountType {
 }
 
 model Account {
-  id             String      @id @default(cuid())
+  id             String          @id @default(cuid())
   userId         String
   name           String
   bankName       String?
-  type           AccountType @default(CHECKING)
-  currency       String      @default("USD")
-  colorHex       String      @default("#10B981")
+  type           AccountType     @default(CHECKING)
+  currency       String          @default("USD")
+  colorHex       String          @default("#10B981")
   icon           String?
-  initialBalance Int         @default(0)
-  archived       Boolean     @default(false)
+  initialBalance Int             @default(0)
+  archived       Boolean         @default(false)
   creditLimit    Int?
   statementDay   Int?
   dueDay         Int?
   apr            Float?
   minPayment     Int?
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  transactions   Transaction[] @relation("AccountTransactions")
-  transfersIn    Transaction[] @relation("TransferAccount")
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions   Transaction[]   @relation("AccountTransactions")
+  transfersIn    Transaction[]   @relation("TransferAccount")
   recurringRules RecurringRule[]
+
   @@index([userId])
 }
 
@@ -94,17 +97,18 @@ enum CategoryKind {
 }
 
 model Category {
-  id        String       @id @default(cuid())
-  userId    String?
-  name      String
-  icon      String?
-  colorHex  String       @default("#8A857E")
-  kind      CategoryKind @default(EXPENSE)
-  isSystem  Boolean      @default(false)
-  createdAt DateTime     @default(now())
-  user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  transactions Transaction[]
+  id             String          @id @default(cuid())
+  userId         String?
+  name           String
+  icon           String?
+  colorHex       String          @default("#8A857E")
+  kind           CategoryKind    @default(EXPENSE)
+  isSystem       Boolean         @default(false)
+  createdAt      DateTime        @default(now())
+  user           User?           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions   Transaction[]
   recurringRules RecurringRule[]
+
   @@index([userId])
 }
 
@@ -135,14 +139,15 @@ model Transaction {
   recurringRuleId   String?
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  account         Account   @relation("AccountTransactions", fields: [accountId], references: [id], onDelete: Cascade)
-  transferAccount Account?  @relation("TransferAccount", fields: [transferAccountId], references: [id])
-  category        Category? @relation(fields: [categoryId], references: [id])
-  recurringRule   RecurringRule? @relation(fields: [recurringRuleId], references: [id], onDelete: SetNull)
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account           Account           @relation("AccountTransactions", fields: [accountId], references: [id], onDelete: Cascade)
+  transferAccount   Account?          @relation("TransferAccount", fields: [transferAccountId], references: [id])
+  category          Category?         @relation(fields: [categoryId], references: [id])
+  recurringRule     RecurringRule?    @relation(fields: [recurringRuleId], references: [id], onDelete: SetNull)
+
+  @@unique([recurringRuleId, date])
   @@index([userId, date])
   @@index([accountId])
-  @@unique([recurringRuleId, date])
 }
 
 enum RecurrenceFrequency {
@@ -167,9 +172,10 @@ model RecurringRule {
   materializedThrough DateTime?
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  account      Account       @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  category     Category?     @relation(fields: [categoryId], references: [id])
-  transactions Transaction[]
+  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account             Account             @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category            Category?           @relation(fields: [categoryId], references: [id])
+  transactions        Transaction[]
+
   @@index([userId])
 }
