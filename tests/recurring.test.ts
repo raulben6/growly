@@ -74,6 +74,25 @@ describe.skipIf(!process.env.DATABASE_URL)('materializeRecurringForUser', () => 
     // semanal desde now+1d hasta now+20d: días +1, +8, +15 → 3
     expect(await prisma.transaction.count({ where: { userId, description: 'Corta' } })).toBe(3)
   })
+
+  it('no escribe cuando no hay ocurrencias nuevas (regla más allá del horizonte)', async () => {
+    const rule = await prisma.recurringRule.create({
+      data: {
+        userId, accountId, type: 'EXPENSE', amount: 100, description: 'Lejana',
+        frequency: 'MONTHLY', startDate: addDaysUTC(now, 120),
+      },
+    })
+    await materializeRecurringForUser(userId, now)
+    let r = await prisma.recurringRule.findUnique({ where: { id: rule.id } })
+    expect(r!.materializedThrough).toBeNull()
+    expect(await prisma.transaction.count({ where: { recurringRuleId: rule.id } })).toBe(0)
+    // cuando el tiempo avanza y la primera ocurrencia entra al horizonte, crea y avanza el marcador
+    const later = addDaysUTC(now, 40)
+    await materializeRecurringForUser(userId, later)
+    r = await prisma.recurringRule.findUnique({ where: { id: rule.id } })
+    expect(r!.materializedThrough?.getTime()).toBe(addDaysUTC(later, 90).getTime())
+    expect(await prisma.transaction.count({ where: { recurringRuleId: rule.id } })).toBeGreaterThan(0)
+  })
 })
 
 describe.skipIf(!process.env.DATABASE_URL)('confirmTransactionForUser', () => {
