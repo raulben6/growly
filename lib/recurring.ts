@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { nextOccurrences, addDaysUTC } from '@/lib/recurrence'
+import type { RecurrenceFrequency } from '@/lib/recurrence'
 
 export const HORIZON_DAYS = 90
 
@@ -46,4 +47,79 @@ export async function confirmTransactionForUser(userId: string, id: string) {
     data: { status: 'CLEARED' },
   })
   return { ok: res.count > 0 }
+}
+
+export type RecurringRuleData = {
+  type: 'INCOME' | 'EXPENSE'
+  amount: number
+  accountId: string
+  categoryId?: string | null
+  description: string
+  frequency: RecurrenceFrequency
+  startDate: Date
+  endDate?: Date | null
+}
+
+export function getRecurringRulesForUser(userId: string) {
+  return prisma.recurringRule.findMany({
+    where: { userId },
+    orderBy: { createdAt: 'asc' },
+    include: {
+      account: { select: { name: true } },
+      category: { select: { name: true, icon: true } },
+    },
+  })
+}
+
+export function createRecurringRuleForUser(userId: string, data: RecurringRuleData) {
+  return prisma.recurringRule.create({ data: { ...data, userId } })
+}
+
+// Editar una regla: sus PENDING futuras se borran y el marcador vuelve a `now`,
+// de modo que la próxima materialización regenera la serie con los valores nuevos.
+// Lo pasado y lo CLEARED no se toca.
+export function updateRecurringRuleForUser(
+  userId: string, id: string, data: RecurringRuleData, now: Date = new Date(),
+) {
+  return prisma.$transaction(async (tx) => {
+    const updated = await tx.recurringRule.updateMany({
+      where: { id, userId },
+      data: { ...data, materializedThrough: now },
+    })
+    if (updated.count === 0) return { ok: false }
+    await tx.transaction.deleteMany({
+      where: { recurringRuleId: id, userId, status: 'PENDING', date: { gt: now } },
+    })
+    return { ok: true }
+  })
+}
+
+export function setRecurringRuleActiveForUser(
+  userId: string, id: string, active: boolean, now: Date = new Date(),
+) {
+  return prisma.$transaction(async (tx) => {
+    const updated = await tx.recurringRule.updateMany({
+      where: { id, userId },
+      data: active ? { active: true, materializedThrough: now } : { active: false },
+    })
+    if (updated.count === 0) return { ok: false }
+    if (!active) {
+      await tx.transaction.deleteMany({
+        where: { recurringRuleId: id, userId, status: 'PENDING', date: { gt: now } },
+      })
+    }
+    return { ok: true }
+  })
+}
+
+export function deleteRecurringRuleForUser(userId: string, id: string, now: Date = new Date()) {
+  return prisma.$transaction(async (tx) => {
+    const owned = await tx.recurringRule.findFirst({ where: { id, userId }, select: { id: true } })
+    if (!owned) return { ok: false }
+    await tx.transaction.deleteMany({
+      where: { recurringRuleId: id, userId, status: 'PENDING', date: { gt: now } },
+    })
+    await tx.recurringRule.delete({ where: { id } }) // histórico queda con SetNull
+    return { ok: true }
+  })
 }
