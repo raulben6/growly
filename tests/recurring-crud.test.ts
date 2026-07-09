@@ -98,4 +98,24 @@ describe.skipIf(!process.env.DATABASE_URL)('CRUD de reglas recurrentes', () => {
     expect((await setRecurringRuleActiveForUser('nadie', 'no-existe', false)).ok).toBe(false)
     expect((await deleteRecurringRuleForUser('nadie', 'no-existe')).ok).toBe(false)
   })
+
+  it('update con categoryId/endDate undefined los limpia (reemplazo completo)', async () => {
+    const cat = await prisma.category.findFirst({ where: { userId: null, kind: 'EXPENSE' } })
+    const rule = await createRecurringRuleForUser(userId, { ...baseRule(), categoryId: cat?.id ?? null, endDate: addDaysUTC(now, 60) })
+    const res = await updateRecurringRuleForUser(userId, rule.id, {
+      type: 'EXPENSE', amount: 1600, accountId, description: 'Gym', frequency: 'MONTHLY',
+      startDate: addDaysUTC(now, -40),
+      // categoryId y endDate omitidos a propósito (undefined)
+    }, now)
+    expect(res.ok).toBe(true)
+    const updated = await prisma.recurringRule.findUnique({ where: { id: rule.id } })
+    expect(updated!.categoryId).toBeNull()
+    expect(updated!.endDate).toBeNull()
+  })
+
+  it('borrar dos veces: la segunda devuelve ok:false sin lanzar', async () => {
+    const rule = await createRecurringRuleForUser(userId, baseRule())
+    expect((await deleteRecurringRuleForUser(userId, rule.id, now)).ok).toBe(true)
+    expect((await deleteRecurringRuleForUser(userId, rule.id, now)).ok).toBe(false)
+  })
 })

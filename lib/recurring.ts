@@ -84,7 +84,7 @@ export function updateRecurringRuleForUser(
   return prisma.$transaction(async (tx) => {
     const updated = await tx.recurringRule.updateMany({
       where: { id, userId },
-      data: { ...data, materializedThrough: now },
+      data: { ...data, categoryId: data.categoryId ?? null, endDate: data.endDate ?? null, materializedThrough: now },
     })
     if (updated.count === 0) return { ok: false }
     await tx.transaction.deleteMany({
@@ -114,12 +114,10 @@ export function setRecurringRuleActiveForUser(
 
 export function deleteRecurringRuleForUser(userId: string, id: string, now: Date = new Date()) {
   return prisma.$transaction(async (tx) => {
-    const owned = await tx.recurringRule.findFirst({ where: { id, userId }, select: { id: true } })
-    if (!owned) return { ok: false }
     await tx.transaction.deleteMany({
       where: { recurringRuleId: id, userId, status: 'PENDING', date: { gt: now } },
-    })
-    await tx.recurringRule.delete({ where: { id } }) // histórico queda con SetNull
-    return { ok: true }
+    }) // histórico queda con SetNull
+    const deleted = await tx.recurringRule.deleteMany({ where: { id, userId } })
+    return { ok: deleted.count > 0 }
   })
 }
