@@ -75,3 +75,14 @@ export const createRecurringRuleSchema = recurringRuleBaseSchema.refine(
 )
 
 export type RecurringRuleFormValues = z.infer<typeof recurringRuleBaseSchema>
+
+export const budgetSchema = z.object({
+  categoryId: z.string().min(1, 'Categoría requerida'),
+  year: z.number().int().min(2000).max(2100),
+  month: z.number().int().min(0).max(11), // 0-11, convención JS Date
+  amount: z.number().int().positive('El límite debe ser mayor que 0'),
+})
+
+export type BudgetFormValues = z.infer<typeof budgetSchema>
+
+export const idSchema = z.string().min(1)
