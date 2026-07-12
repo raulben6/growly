@@ -151,3 +151,46 @@ describe.skipIf(!process.env.DATABASE_URL)('getDashboardData materializa recurre
     expect(d.recent.length).toBe(0)
   })
 })
+
+describe.skipIf(!process.env.DATABASE_URL)('getDashboardData · budget', () => {
+  const email = `dashbud_${Date.now()}@growly.app`
+  let uid = ''
+  let accId = ''
+  let catId = ''
+  const now = new Date()
+
+  beforeAll(async () => {
+    const u = await prisma.user.create({ data: { name: 'DashBud', email } })
+    uid = u.id
+    accId = (await prisma.account.create({ data: { userId: uid, name: 'C', type: 'CHECKING' } })).id
+    catId = (await prisma.category.create({ data: { userId: uid, name: 'DashComida', kind: 'EXPENSE', colorHex: '#3B82F6' } })).id
+  })
+  afterAll(async () => {
+    await prisma.budget.deleteMany({ where: { userId: uid } })
+    await prisma.transaction.deleteMany({ where: { userId: uid } })
+    await prisma.category.deleteMany({ where: { userId: uid } })
+    await prisma.account.deleteMany({ where: { userId: uid } })
+    await prisma.user.delete({ where: { id: uid } })
+  })
+
+  it('sin budgets devuelve budget: null', async () => {
+    const d = await getDashboardData(uid, now)
+    expect(d.budget).toBeNull()
+  })
+
+  it('con budget devuelve totales y top con nombre/color de la categoría', async () => {
+    await prisma.budget.create({
+      data: { userId: uid, categoryId: catId, year: now.getFullYear(), month: now.getMonth(), amount: 100_000 },
+    })
+    await prisma.transaction.create({
+      data: {
+        userId: uid, accountId: accId, categoryId: catId, type: 'EXPENSE',
+        amount: 25_000, description: 'Súper', date: now, status: 'CLEARED',
+      },
+    })
+    const d = await getDashboardData(uid, now)
+    expect(d.budget).not.toBeNull()
+    expect(d.budget!.totals).toMatchObject({ limit: 100_000, spent: 25_000, pct: 25 })
+    expect(d.budget!.top[0]).toMatchObject({ name: 'DashComida', colorHex: '#3B82F6', pct: 25, over: false })
+  })
+})

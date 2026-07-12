@@ -6,6 +6,7 @@ import { KpiCard } from '@/components/growly/kpi-card'
 import { CategoryDonut } from '@/components/growly/category-donut'
 import { TransactionRow } from '@/components/growly/transaction-row'
 import { Money } from '@/components/growly/money'
+import { BudgetCard } from '@/components/growly/budget-card'
 
 export default async function DashboardPage() {
   const session = await auth()
@@ -23,8 +24,8 @@ export default async function DashboardPage() {
         <KpiCard label="Ahorro" cents={d.monthly.savings} accent="neutral" signed subtitle={`${d.monthly.savingsRate}% tasa`} />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <CategoryDonut breakdown={d.breakdown} />
+      <div className="grid gap-4 md:grid-cols-3">
+        <BudgetCard summary={d.budget} />
 
         <div className="rounded-[20px] border border-border bg-card p-6 shadow-[var(--shadow-card)]">
           <div className="mb-4 text-base font-extrabold text-foreground">Próximos pagos</div>
@@ -41,6 +42,8 @@ export default async function DashboardPage() {
             </div>
           )}
         </div>
+
+        <CategoryDonut breakdown={d.breakdown} />
       </div>
 
       <div className="rounded-[20px] border border-border bg-card px-6 py-4 shadow-[var(--shadow-card)]">

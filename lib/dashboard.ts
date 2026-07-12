@@ -63,13 +63,15 @@ import { getAccountsWithBalances } from '@/lib/accounts'
 import { getTransactionsForUser } from '@/lib/transactions'
 import { getCategoriesForUser } from '@/lib/categories'
 import { materializeRecurringForUser } from '@/lib/recurring'
+import { getBudgetsForMonth, budgetProgress } from '@/lib/budgets'
 
 export async function getDashboardData(userId: string, now: Date) {
   await materializeRecurringForUser(userId, now)
-  const [{ accounts }, txns, categories] = await Promise.all([
+  const [{ accounts }, txns, categories, budgets] = await Promise.all([
     getAccountsWithBalances(userId),
     getTransactionsForUser(userId),
     getCategoriesForUser(userId),
+    getBudgetsForMonth(userId, now.getFullYear(), now.getMonth(), now),
   ])
 
   const total = accounts
@@ -81,6 +83,26 @@ export async function getDashboardData(userId: string, now: Date) {
   const comprometido = allUpcoming
     .filter((t) => t.type === 'EXPENSE')
     .reduce((s, t) => s + t.amount, 0)
+
+  const catById = new Map(categories.map((c) => [c.id, c]))
+  const progress = budgetProgress(budgets, txns, now.getFullYear(), now.getMonth())
+  const budget =
+    budgets.length === 0
+      ? null
+      : {
+          totals: {
+            limit: progress.totals.limit,
+            spent: progress.totals.spent,
+            pct: progress.totals.pct,
+          },
+          top: progress.categories.slice(0, 3).map((c) => ({
+            categoryId: c.categoryId,
+            name: catById.get(c.categoryId)?.name ?? 'Otros',
+            colorHex: catById.get(c.categoryId)?.colorHex ?? '#8A857E',
+            pct: c.pct,
+            over: c.over,
+          })),
+        }
 
   return {
     total,
@@ -100,5 +122,6 @@ export async function getDashboardData(userId: string, now: Date) {
       5,
     ),
     categories,
+    budget,
   }
 }
