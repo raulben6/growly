@@ -63,3 +63,71 @@ export function budgetForecast(totals: { spent: number }, now: Date): { projecte
     daysLeft: daysInMonth - daysElapsed,
   }
 }
+
+import { prisma } from '@/lib/prisma'
+
+// Lee los budgets del mes pedido. Auto-copia (spec F2 §6.1): solo si el mes pedido
+// es el actual, está vacío y algún mes de los 12 anteriores tiene filas — se copia
+// el más reciente. La copia es un único createMany (atómico); skipDuplicates + el
+// unique [userId, categoryId, year, month] protegen contra la doble copia concurrente.
+export async function getBudgetsForMonth(
+  userId: string,
+  year: number,
+  month: number,
+  now: Date = new Date(),
+) {
+  const existing = await prisma.budget.findMany({
+    where: { userId, year, month },
+    orderBy: { createdAt: 'asc' },
+  })
+  if (existing.length > 0) return existing
+  if (year !== now.getFullYear() || month !== now.getMonth()) return existing
+
+  // pares (year, month) de los 12 meses anteriores al pedido
+  const pairs: { year: number; month: number }[] = []
+  let y = year
+  let m = month
+  for (let i = 0; i < 12; i++) {
+    m -= 1
+    if (m < 0) { m = 11; y -= 1 }
+    pairs.push({ year: y, month: m })
+  }
+  const latest = await prisma.budget.findFirst({
+    where: { userId, OR: pairs },
+    orderBy: [{ year: 'desc' }, { month: 'desc' }],
+    select: { year: true, month: true },
+  })
+  if (!latest) return existing
+
+  const source = await prisma.budget.findMany({
+    where: { userId, year: latest.year, month: latest.month },
+  })
+  await prisma.budget.createMany({
+    data: source.map((b) => ({ userId, categoryId: b.categoryId, year, month, amount: b.amount })),
+    skipDuplicates: true,
+  })
+  return prisma.budget.findMany({ where: { userId, year, month }, orderBy: { createdAt: 'asc' } })
+}
+
+export function upsertBudgetForUser(
+  userId: string,
+  data: { categoryId: string; year: number; month: number; amount: number },
+) {
+  return prisma.budget.upsert({
+    where: {
+      userId_categoryId_year_month: {
+        userId,
+        categoryId: data.categoryId,
+        year: data.year,
+        month: data.month,
+      },
+    },
+    create: { userId, ...data },
+    update: { amount: data.amount },
+  })
+}
+
+export async function deleteBudgetForUser(userId: string, id: string) {
+  const res = await prisma.budget.deleteMany({ where: { id, userId } })
+  return { ok: res.count > 0 }
+}
