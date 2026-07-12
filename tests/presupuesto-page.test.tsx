@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest'
 import { render, screen } from '@testing-library/react'
 
 vi.mock('@/lib/auth', () => ({ auth: async () => ({ user: { id: 'u1' } }) }))
@@ -30,6 +30,15 @@ vi.mock('@/lib/categories', () => ({
 }))
 
 import PresupuestoPage from '@/app/(app)/presupuesto/page'
+
+// Fijar reloj para que los chequeos de "mes actual" sean deterministas
+beforeAll(() => {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(new Date(2026, 6, 15))
+})
+afterAll(() => {
+  vi.useRealTimers()
+})
 
 beforeEach(() => getBudgetsForMonth.mockReset())
 
