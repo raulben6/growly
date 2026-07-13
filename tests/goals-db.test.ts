@@ -79,4 +79,10 @@ describe.skipIf(!process.env.DATABASE_URL)('goals DB', () => {
     const goals = await getGoalsForUser(userId, now)
     expect(goals.map((g) => g.id)).toEqual([goalA])
   })
+
+  it('addContributionForUser rechaza meta archivada', async () => {
+    const res = await addContributionForUser(userId, { goalId: goalB, amount: 5_000 })
+    expect(res).toEqual({ ok: false })
+    expect(await prisma.goalContribution.count({ where: { goalId: goalB } })).toBe(0)
+  })
 })

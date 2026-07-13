@@ -79,7 +79,7 @@ export async function addContributionForUser(
   data: { goalId: string; amount: number; date?: Date; note?: string | null },
 ) {
   const goal = await prisma.goal.findFirst({
-    where: { id: data.goalId, userId },
+    where: { id: data.goalId, userId, archived: false },
     select: { id: true },
   })
   if (!goal) return { ok: false }

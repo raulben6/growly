@@ -54,7 +54,7 @@ export function GoalDialog({
     }
     const payload = {
       name: String(fd.get('name') ?? ''),
-      emoji: emoji || null,
+      emoji: emoji.trim() || null,
       colorHex,
       targetAmount,
       targetDate: String(fd.get('targetDate') ?? '') || null,
