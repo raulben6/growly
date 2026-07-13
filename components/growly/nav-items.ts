@@ -1,4 +1,4 @@
-import { Home, ArrowUpDown, PieChart, Target, CreditCard, BarChart3, type LucideIcon } from 'lucide-react'
+import { Home, ArrowUpDown, PieChart, Target, CalendarDays, CreditCard, BarChart3, type LucideIcon } from 'lucide-react'
 
 export type NavItem = { href: string; label: string; icon: LucideIcon }
 
@@ -7,6 +7,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: '/movimientos', label: 'Movimientos',        icon: ArrowUpDown },
   { href: '/presupuesto', label: 'Presupuesto',        icon: PieChart },
   { href: '/metas',       label: 'Metas',              icon: Target },
+  { href: '/calendario',  label: 'Calendario',         icon: CalendarDays },
   { href: '/cuentas',     label: 'Cuentas y tarjetas', icon: CreditCard },
   { href: '/reportes',    label: 'Reportes',           icon: BarChart3 },
 ]

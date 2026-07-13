@@ -5,9 +5,9 @@ import { Sidebar } from '@/components/growly/sidebar'
 vi.mock('next/navigation', () => ({ usePathname: () => '/' }))
 
 describe('Sidebar', () => {
-  it('muestra los 6 items de navegación', () => {
+  it('muestra los 7 items de navegación', () => {
     render(<Sidebar />)
-    for (const label of ['Inicio','Movimientos','Presupuesto','Metas','Cuentas y tarjetas','Reportes']) {
+    for (const label of ['Inicio', 'Movimientos', 'Presupuesto', 'Metas', 'Calendario', 'Cuentas y tarjetas', 'Reportes']) {
       expect(screen.getByText(label)).toBeInTheDocument()
     }
   })
