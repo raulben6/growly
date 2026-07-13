@@ -86,3 +86,22 @@ export const budgetSchema = z.object({
 export type BudgetFormValues = z.infer<typeof budgetSchema>
 
 export const idSchema = z.string().min(1)
+
+export const goalSchema = z.object({
+  name: z.string().min(1, 'Nombre requerido'),
+  emoji: z.string().trim().max(8, 'Emoji demasiado largo').nullable().optional(),
+  colorHex: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Color no válido'),
+  targetAmount: z.number().int().positive('El objetivo debe ser mayor que 0'),
+  targetDate: z.coerce.date().nullable().optional(),
+})
+
+export type GoalFormValues = z.infer<typeof goalSchema>
+
+export const contributionSchema = z.object({
+  goalId: z.string().min(1, 'Meta requerida'),
+  amount: z.number().int().positive('El importe debe ser mayor que 0'),
+  date: z.coerce.date().optional(),
+  note: z.string().trim().max(200, 'Nota demasiado larga').optional(),
+})
+
+export type ContributionFormValues = z.infer<typeof contributionSchema>
