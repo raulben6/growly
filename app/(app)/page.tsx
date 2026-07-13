@@ -7,6 +7,7 @@ import { CategoryDonut } from '@/components/growly/category-donut'
 import { TransactionRow } from '@/components/growly/transaction-row'
 import { Money } from '@/components/growly/money'
 import { BudgetCard } from '@/components/growly/budget-card'
+import { GoalsCard } from '@/components/growly/goals-card'
 
 export default async function DashboardPage() {
   const session = await auth()
@@ -43,30 +44,34 @@ export default async function DashboardPage() {
           )}
         </div>
 
-        <CategoryDonut breakdown={d.breakdown} />
+        <GoalsCard goals={d.goals} />
       </div>
 
-      <div className="rounded-[20px] border border-border bg-card px-6 py-4 shadow-[var(--shadow-card)]">
-        <div className="mb-2 text-base font-extrabold text-foreground">Movimientos recientes</div>
-        {d.recent.length === 0 ? (
-          <p className="py-4 text-sm text-muted-foreground">Aún no hay movimientos.</p>
-        ) : (
-          <div className="flex flex-col divide-y divide-[var(--line)]">
-            {d.recent.map((t) => {
-              const cat = t.categoryId ? catById.get(t.categoryId) : null
-              const signed = t.type === 'INCOME' ? t.amount : -t.amount
-              return (
-                <TransactionRow
-                  key={t.id}
-                  description={t.description}
-                  meta={t.type === 'INCOME' ? 'Ingreso' : t.type === 'TRANSFER' ? 'Transferencia' : (cat?.name ?? 'Gasto')}
-                  signedCents={signed}
-                  iconName={cat?.icon ?? 'ellipsis'}
-                />
-              )
-            })}
-          </div>
-        )}
+      <div className="grid gap-4 md:grid-cols-2">
+        <CategoryDonut breakdown={d.breakdown} />
+
+        <div className="rounded-[20px] border border-border bg-card px-6 py-4 shadow-[var(--shadow-card)]">
+          <div className="mb-2 text-base font-extrabold text-foreground">Movimientos recientes</div>
+          {d.recent.length === 0 ? (
+            <p className="py-4 text-sm text-muted-foreground">Aún no hay movimientos.</p>
+          ) : (
+            <div className="flex flex-col divide-y divide-[var(--line)]">
+              {d.recent.map((t) => {
+                const cat = t.categoryId ? catById.get(t.categoryId) : null
+                const signed = t.type === 'INCOME' ? t.amount : -t.amount
+                return (
+                  <TransactionRow
+                    key={t.id}
+                    description={t.description}
+                    meta={t.type === 'INCOME' ? 'Ingreso' : t.type === 'TRANSFER' ? 'Transferencia' : (cat?.name ?? 'Gasto')}
+                    signedCents={signed}
+                    iconName={cat?.icon ?? 'ellipsis'}
+                  />
+                )
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

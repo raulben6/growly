@@ -194,3 +194,39 @@ describe.skipIf(!process.env.DATABASE_URL)('getDashboardData · budget', () => {
     expect(d.budget!.top[0]).toMatchObject({ name: 'DashComida', colorHex: '#3B82F6', pct: 25, over: false })
   })
 })
+
+describe.skipIf(!process.env.DATABASE_URL)('getDashboardData · goals', () => {
+  const email = `dashgoal_${Date.now()}@growly.app`
+  let uid = ''
+  const now = new Date()
+
+  beforeAll(async () => {
+    uid = (await prisma.user.create({ data: { name: 'DashGoal', email } })).id
+  })
+  afterAll(async () => {
+    await prisma.goalContribution.deleteMany({ where: { userId: uid } })
+    await prisma.goal.deleteMany({ where: { userId: uid } })
+    await prisma.user.delete({ where: { id: uid } })
+  })
+
+  it('sin metas devuelve goals: []', async () => {
+    const d = await getDashboardData(uid, now)
+    expect(d.goals).toEqual([])
+  })
+
+  it('con metas devuelve top 3 con pct', async () => {
+    for (const [i, name] of ['A', 'B', 'C', 'D'].entries()) {
+      const g = await prisma.goal.create({
+        data: { userId: uid, name, targetAmount: 100_000, colorHex: '#10B981' },
+      })
+      if (i === 0) {
+        await prisma.goalContribution.create({
+          data: { goalId: g.id, userId: uid, amount: 48_000, date: now },
+        })
+      }
+    }
+    const d = await getDashboardData(uid, now)
+    expect(d.goals).toHaveLength(3)
+    expect(d.goals[0]).toMatchObject({ name: 'A', pct: 48, barPct: 48 })
+  })
+})

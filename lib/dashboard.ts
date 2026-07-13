@@ -64,14 +64,16 @@ import { getTransactionsForUser } from '@/lib/transactions'
 import { getCategoriesForUser } from '@/lib/categories'
 import { materializeRecurringForUser } from '@/lib/recurring'
 import { getBudgetsForMonth, budgetProgress } from '@/lib/budgets'
+import { getGoalsForUser, goalProgress } from '@/lib/goals'
 
 export async function getDashboardData(userId: string, now: Date) {
   await materializeRecurringForUser(userId, now)
-  const [{ accounts }, txns, categories, budgets] = await Promise.all([
+  const [{ accounts }, txns, categories, budgets, allGoals] = await Promise.all([
     getAccountsWithBalances(userId),
     getTransactionsForUser(userId),
     getCategoriesForUser(userId),
     getBudgetsForMonth(userId, now.getFullYear(), now.getMonth(), now),
+    getGoalsForUser(userId, now),
   ])
 
   const total = accounts
@@ -104,6 +106,18 @@ export async function getDashboardData(userId: string, now: Date) {
           })),
         }
 
+  const goals = allGoals.slice(0, 3).map((g) => {
+    const p = goalProgress(g, g.saved)
+    return {
+      id: g.id,
+      name: g.name,
+      emoji: g.emoji,
+      colorHex: g.colorHex,
+      pct: p.pct,
+      barPct: p.barPct,
+    }
+  })
+
   return {
     total,
     comprometido,
@@ -123,5 +137,6 @@ export async function getDashboardData(userId: string, now: Date) {
     ),
     categories,
     budget,
+    goals,
   }
 }
