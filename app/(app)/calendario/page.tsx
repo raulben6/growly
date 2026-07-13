@@ -4,7 +4,7 @@ import { getTransactionsForUser } from '@/lib/transactions'
 import { getAccountsForUser } from '@/lib/accounts'
 import { getCategoriesForUser } from '@/lib/categories'
 import { materializeRecurringForUser } from '@/lib/recurring'
-import { parseMonthParam, isCurrentMonth } from '@/lib/month-param'
+import { parseMonthParam, isCurrentMonth, monthParam } from '@/lib/month-param'
 import {
   calendarEvents, calendarMonthTotals, monthGridDays, shortMonthName, type CalTx,
 } from '@/lib/calendar'
@@ -50,7 +50,9 @@ export default async function CalendarioPage({
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-4">
       <h1 className="text-2xl font-extrabold tracking-[-0.02em]">Calendario</h1>
+      {/* remonta por mes: la selección de día vuelve al default al navegar (spec §8.2) */}
       <CalendarView
+        key={monthParam(ym)}
         ym={ym}
         todayDay={isCurrentMonth(ym, now) ? now.getDate() : null}
         cells={monthGridDays(ym.year, ym.month)}

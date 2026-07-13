@@ -26,12 +26,12 @@ describe('goalProgress', () => {
 
 describe('goalTotals', () => {
   const now = new Date(2026, 6, 15) // 15 jul 2026
-  it('suma total y filtra el mes actual con getters locales', () => {
+  it('suma total y filtra el mes actual (fechas de datos UTC vs now local)', () => {
     const contributions = [
-      { amount: 60_000, date: new Date(2026, 6, 10) },
-      { amount: 40_000, date: new Date(2026, 6, 1) },
-      { amount: 140_000, date: new Date(2026, 5, 20) }, // junio: no cuenta este mes
-      { amount: 10_000, date: new Date(2025, 6, 10) },  // julio de OTRO año: no cuenta
+      { amount: 60_000, date: new Date(Date.UTC(2026, 6, 10)) },
+      { amount: 40_000, date: new Date(Date.UTC(2026, 6, 1)) },
+      { amount: 140_000, date: new Date(Date.UTC(2026, 5, 20)) }, // junio: no cuenta este mes
+      { amount: 10_000, date: new Date(Date.UTC(2025, 6, 10)) },  // julio de OTRO año: no cuenta
     ]
     expect(goalTotals(contributions, now)).toEqual({ saved: 250_000, savedThisMonth: 100_000 })
   })

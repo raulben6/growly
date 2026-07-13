@@ -36,4 +36,8 @@ test('calendario: un gasto de hoy aparece en la agenda y en los chips', async ({
   await expect(page.getByText('Cine')).toBeVisible()
   await expect(page.getByText(/Pagos/)).toBeVisible()
   await expect(page.getByText('−$45.50')).toBeVisible()
+
+  // al navegar de mes, la selección vuelve al default (día 1 en mes no actual)
+  await page.getByLabel('Mes anterior').click()
+  await expect(page.getByText(/· 1 [A-ZÁÉÍÓÚ]{3}/)).toBeVisible()
 })
