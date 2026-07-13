@@ -74,6 +74,15 @@ describe('budgetProgress', () => {
     expect(categories).toEqual([])
     expect(totals).toEqual({ limit: 0, spent: 0, pct: 0, available: 0 })
   })
+
+  it('gasto del día 1 a medianoche UTC cuenta en el mes (convención UTC)', () => {
+    const { totals } = budgetProgress(
+      budgets,
+      [tx({ date: new Date(Date.UTC(2026, 6, 1)), amount: 10_000 })],
+      2026, 6,
+    )
+    expect(totals.spent).toBe(10_000)
+  })
 })
 
 describe('budgetForecast', () => {

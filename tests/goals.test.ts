@@ -38,6 +38,11 @@ describe('goalTotals', () => {
   it('sin aportes: ceros', () => {
     expect(goalTotals([], now)).toEqual({ saved: 0, savedThisMonth: 0 })
   })
+
+  it('aporte del día 1 a medianoche UTC cuenta en el mes (convención UTC)', () => {
+    expect(goalTotals([{ amount: 5_000, date: new Date(Date.UTC(2026, 6, 1)) }], now))
+      .toEqual({ saved: 5_000, savedThisMonth: 5_000 })
+  })
 })
 
 describe('goalDateLabel', () => {

@@ -23,6 +23,13 @@ describe('monthlyTotals', () => {
       income: 300000, expense: 90000, savings: 210000, savingsRate: 70,
     })
   })
+
+  it('día 1 del mes a medianoche UTC cuenta en ese mes (convención UTC)', () => {
+    const txns: DashTx[] = [
+      { type: 'EXPENSE', amount: 10000, date: new Date('2026-07-01T00:00:00Z'), status: 'CLEARED' },
+    ]
+    expect(monthlyTotals(txns, 2026, 6).expense).toBe(10000)
+  })
 })
 
 describe('categoryBreakdown', () => {

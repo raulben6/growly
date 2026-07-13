@@ -19,8 +19,8 @@ export type CategoryProgress = {
 
 export type BudgetTotals = { limit: number; spent: number; pct: number; available: number }
 
-// spent = EXPENSE CLEARED del mes, con getters locales — misma convención que
-// monthlyTotals en lib/dashboard: los KPIs y el presupuesto deben coincidir.
+// spent = EXPENSE CLEARED del mes. Fechas de datos = fecha-calendario a medianoche UTC
+// → getters UTC; year/month = componentes locales de now (mismo criterio que lib/dashboard).
 export function budgetProgress(
   budgets: BudgetLike[],
   txns: BudgetTx[],
@@ -30,7 +30,7 @@ export function budgetProgress(
   const spentByCat = new Map<string, number>()
   for (const t of txns) {
     if (t.type !== 'EXPENSE' || t.status === 'PENDING' || !t.categoryId) continue
-    if (t.date.getFullYear() !== year || t.date.getMonth() !== month) continue
+    if (t.date.getUTCFullYear() !== year || t.date.getUTCMonth() !== month) continue
     spentByCat.set(t.categoryId, (spentByCat.get(t.categoryId) ?? 0) + t.amount)
   }
 

@@ -6,8 +6,10 @@ export type DashTx = {
   status?: 'CLEARED' | 'PENDING'
 }
 
+// Las fechas de los movimientos son fechas-calendario a medianoche UTC → getters UTC.
+// year/month vienen de los componentes LOCALES de now (el mes actual del usuario).
 const inMonth = (d: Date, year: number, month: number) =>
-  d.getFullYear() === year && d.getMonth() === month
+  d.getUTCFullYear() === year && d.getUTCMonth() === month
 const isCleared = (t: { status?: string }) => t.status !== 'PENDING'
 
 export function monthlyTotals(txns: DashTx[], year: number, month: number) {

@@ -14,7 +14,8 @@ export function goalProgress(
 
 export type ContributionLike = { amount: number; date: Date }
 
-// "este mes" con getters locales — misma convención que monthlyTotals/budgetProgress.
+// "este mes": las fechas de aportes son fechas-calendario a medianoche UTC → getters UTC;
+// el mes actual sale de los componentes locales de now (mismo criterio que lib/dashboard).
 export function goalTotals(
   contributions: ContributionLike[],
   now: Date,
@@ -23,7 +24,7 @@ export function goalTotals(
   let savedThisMonth = 0
   for (const c of contributions) {
     saved += c.amount
-    if (c.date.getFullYear() === now.getFullYear() && c.date.getMonth() === now.getMonth()) {
+    if (c.date.getUTCFullYear() === now.getFullYear() && c.date.getUTCMonth() === now.getMonth()) {
       savedThisMonth += c.amount
     }
   }

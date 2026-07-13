@@ -5,7 +5,7 @@ import {
 } from '@/lib/transactions'
 
 describe('groupTransactionsByDay (puro)', () => {
-  const now = new Date('2026-07-06T12:00:00Z')
+  const now = new Date(2026, 6, 6, 12)
   it('etiqueta Hoy / Ayer / fecha y ordena desc', () => {
     const txns = [
       { id: 'a', date: new Date('2026-07-06T09:00:00Z') },
@@ -15,6 +15,12 @@ describe('groupTransactionsByDay (puro)', () => {
     const groups = groupTransactionsByDay(txns, now)
     expect(groups.map((g) => g.label)).toEqual(['Hoy', 'Ayer', '1 jul'])
     expect(groups[0].items[0].id).toBe('a')
+  })
+
+  it('medianoche UTC agrupa por el día de calendario guardado (no se corre un día en offsets negativos)', () => {
+    const txns = [{ id: 'm', date: new Date('2026-07-06T00:00:00Z') }]
+    const groups = groupTransactionsByDay(txns, new Date(2026, 6, 6, 12))
+    expect(groups[0].label).toBe('Hoy')
   })
 })
 
