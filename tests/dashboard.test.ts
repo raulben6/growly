@@ -237,3 +237,36 @@ describe.skipIf(!process.env.DATABASE_URL)('getDashboardData · goals', () => {
     expect(d.goals[0]).toMatchObject({ name: 'A', pct: 48, barPct: 48 })
   })
 })
+
+describe.skipIf(!process.env.DATABASE_URL)('getDashboardData · cashflow y deltas', () => {
+  const email = `dashflow_${Date.now()}@growly.app`
+  let uid = ''
+  const now = new Date()
+
+  beforeAll(async () => {
+    const u = await prisma.user.create({ data: { name: 'DashFlow', email } })
+    uid = u.id
+    const a = await prisma.account.create({ data: { userId: uid, name: 'C', type: 'CHECKING' } })
+    await prisma.transaction.create({
+      data: {
+        userId: uid, accountId: a.id, type: 'INCOME', amount: 100_000,
+        description: 'Nómina', date: now, status: 'CLEARED',
+      },
+    })
+  })
+  afterAll(async () => {
+    await prisma.transaction.deleteMany({ where: { userId: uid } })
+    await prisma.account.deleteMany({ where: { userId: uid } })
+    await prisma.user.delete({ where: { id: uid } })
+  })
+
+  it('devuelve la serie de 6 meses y deltas', async () => {
+    const d = await getDashboardData(uid, now)
+    expect(d.cashflow).toHaveLength(6)
+    const cur = d.cashflow[5]
+    expect([cur.year, cur.month]).toEqual([now.getFullYear(), now.getMonth()])
+    expect(cur.income).toBe(100_000)
+    // mes anterior sin datos → deltas null
+    expect(d.deltas).toEqual({ incomePct: null, expensePct: null })
+  })
+})

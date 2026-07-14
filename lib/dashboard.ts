@@ -67,6 +67,7 @@ import { getCategoriesForUser } from '@/lib/categories'
 import { materializeRecurringForUser } from '@/lib/recurring'
 import { getBudgetsForMonth, budgetProgress } from '@/lib/budgets'
 import { getGoalsForUser, goalProgress } from '@/lib/goals'
+import { monthlySeries, kpiDeltas } from '@/lib/reports'
 
 export async function getDashboardData(userId: string, now: Date) {
   await materializeRecurringForUser(userId, now)
@@ -120,6 +121,9 @@ export async function getDashboardData(userId: string, now: Date) {
     }
   })
 
+  const cashflow = monthlySeries(txns, now, 6)
+  const deltas = kpiDeltas(cashflow)
+
   return {
     total,
     comprometido,
@@ -140,5 +144,7 @@ export async function getDashboardData(userId: string, now: Date) {
     categories,
     budget,
     goals,
+    cashflow,
+    deltas,
   }
 }
