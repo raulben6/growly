@@ -2,13 +2,14 @@ import { Money } from '@/components/growly/money'
 import { cn } from '@/lib/utils'
 
 export function KpiCard({
-  label, cents, accent = 'neutral', subtitle, signed = false,
+  label, cents, accent = 'neutral', subtitle, signed = false, delta,
 }: {
   label: string
   cents: number
   accent?: 'income' | 'expense' | 'neutral'
   subtitle?: string
   signed?: boolean
+  delta?: { text: string; good: boolean } | null
 }) {
   const dot = accent === 'income' ? 'bg-primary/15 text-primary'
     : accent === 'expense' ? 'bg-destructive/15 text-destructive'
@@ -21,6 +22,11 @@ export function KpiCard({
       <div className="text-sm text-muted-foreground">{label}</div>
       <Money cents={cents} signed={signed} className="text-2xl font-extrabold text-foreground" />
       {subtitle && <div className="mt-1 text-xs font-bold text-acc">{subtitle}</div>}
+      {delta && (
+        <div className={cn('mt-1 text-xs font-bold', delta.good ? 'text-acc' : 'text-destructive')}>
+          {delta.text}
+        </div>
+      )}
     </div>
   )
 }
