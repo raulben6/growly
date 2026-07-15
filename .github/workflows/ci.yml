@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+# Postgres efímero por job: los tests .skipIf(!DATABASE_URL) crean sus propios
+# usuarios y limpian en afterAll, así que un contenedor limpio con migrate + seed
+# reproduce el entorno local sin tocar Neon ni exponer secretos.
+env:
+  DATABASE_URL: postgresql://growly:growly@localhost:5432/growly_test
+  AUTH_SECRET: ci-secret-no-productivo
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: growly
+          POSTGRES_PASSWORD: growly
+          POSTGRES_DB: growly_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U growly"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx prisma migrate deploy
+      - run: npx prisma db seed
+      - run: npx vitest run --testTimeout=20000
+
+  e2e:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: growly
+          POSTGRES_PASSWORD: growly
+          POSTGRES_DB: growly_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U growly"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx prisma migrate deploy
+      - run: npx prisma db seed
+      - run: npx playwright install --with-deps chromium
+      # --retries=1 SOLO en CI: mitiga el cold-start conocido del dev server
+      # (Fast Refresh interrumpe el primer flujo); en local se corre estricto.
+      - run: npx playwright test --retries=1
