@@ -43,6 +43,13 @@ export function AccountDialog() {
       type === 'CREDIT_CARD' && limitRaw
         ? parseAmountToCents(String(limitRaw))
         : null
+    // día del mes 1-31, o null; el schema lo valida y el calendario/alertas lo usan
+    const dayOrNull = (v: FormDataEntryValue | null) => {
+      const n = Number(String(v ?? '').trim())
+      return Number.isInteger(n) && n >= 1 && n <= 31 ? n : null
+    }
+    const statementDay = type === 'CREDIT_CARD' ? dayOrNull(fd.get('statementDay')) : null
+    const dueDay = type === 'CREDIT_CARD' ? dayOrNull(fd.get('dueDay')) : null
 
     const res = await createAccount({
       name: String(fd.get('name') ?? ''),
@@ -52,6 +59,8 @@ export function AccountDialog() {
       colorHex: '#10B981',
       initialBalance,
       creditLimit,
+      statementDay,
+      dueDay,
     })
 
     setLoading(false)
@@ -111,15 +120,43 @@ export function AccountDialog() {
             />
           </div>
           {type === 'CREDIT_CARD' && (
-            <div>
-              <Label htmlFor="creditLimit">Límite de crédito</Label>
-              <Input
-                id="creditLimit"
-                name="creditLimit"
-                inputMode="decimal"
-                placeholder="0.00"
-              />
-            </div>
+            <>
+              <div>
+                <Label htmlFor="creditLimit">Límite de crédito</Label>
+                <Input
+                  id="creditLimit"
+                  name="creditLimit"
+                  inputMode="decimal"
+                  placeholder="0.00"
+                />
+              </div>
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <Label htmlFor="statementDay">Día de corte</Label>
+                  <Input
+                    id="statementDay"
+                    name="statementDay"
+                    type="number"
+                    min={1}
+                    max={31}
+                    inputMode="numeric"
+                    placeholder="1-31"
+                  />
+                </div>
+                <div className="flex-1">
+                  <Label htmlFor="dueDay">Día de vencimiento</Label>
+                  <Input
+                    id="dueDay"
+                    name="dueDay"
+                    type="number"
+                    min={1}
+                    max={31}
+                    inputMode="numeric"
+                    placeholder="1-31"
+                  />
+                </div>
+              </div>
+            </>
           )}
           {error && <p className="text-sm text-destructive">{error}</p>}
           <Button
