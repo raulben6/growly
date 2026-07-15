@@ -25,6 +25,7 @@ model User {
   budgets           Budget[]
   goals             Goal[]
   goalContributions GoalContribution[]
+  notifications     Notification[]
 }
 
 model AuthAccount {
@@ -231,4 +232,28 @@ model GoalContribution {
 
   @@index([userId])
   @@index([goalId])
+}
+
+enum NotificationType {
+  BUDGET_WARN
+  BUDGET_OVER
+  PAYMENT_DUE
+  PAYMENT_OVERDUE
+  CARD_DUE
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  dedupeKey String // clave estable de la condición; garantiza idempotencia
+  readAt    DateTime? // null = no leída
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dedupeKey])
+  @@index([userId, createdAt])
 }
