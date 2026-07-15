@@ -1,7 +1,8 @@
 import { ThemeToggle } from './theme-toggle'
-import { Bell, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
+import { NotificationsBell } from './notifications-bell'
 
-export function Topbar({ userName }: { userName: string }) {
+export function Topbar({ userName, unread }: { userName: string; unread: number }) {
   return (
     <header className="flex items-center justify-between mb-6">
       <div>
@@ -9,9 +10,7 @@ export function Topbar({ userName }: { userName: string }) {
         <div className="text-2xl font-extrabold tracking-[-0.02em]">Hola, {userName}</div>
       </div>
       <div className="flex items-center gap-3.5">
-        <button aria-label="Notificaciones" className="w-11 h-11 rounded-xl border border-border bg-card flex items-center justify-center">
-          <Bell size={20} />
-        </button>
+        <NotificationsBell unread={unread} />
         <ThemeToggle />
         <button className="h-11 px-4 rounded-xl bg-primary text-primary-foreground font-extrabold flex items-center gap-2">
           <Plus size={18} /> Añadir

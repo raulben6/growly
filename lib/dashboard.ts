@@ -68,6 +68,8 @@ import { materializeRecurringForUser } from '@/lib/recurring'
 import { getBudgetsForMonth, budgetProgress } from '@/lib/budgets'
 import { getGoalsForUser, goalProgress } from '@/lib/goals'
 import { monthlySeries, kpiDeltas } from '@/lib/reports'
+import { alertCandidates } from '@/lib/alerts'
+import { persistAlertCandidates } from '@/lib/notifications'
 
 export async function getDashboardData(userId: string, now: Date) {
   await materializeRecurringForUser(userId, now)
@@ -120,6 +122,23 @@ export async function getDashboardData(userId: string, now: Date) {
       barPct: p.barPct,
     }
   })
+
+  // Alertas: evaluación perezosa con los datos ya cargados (spec F3 §5.2)
+  await persistAlertCandidates(
+    userId,
+    alertCandidates(
+      {
+        budget: budgets.length > 0 ? progress.totals : null,
+        pendingTxns: txns
+          .filter((t) => t.status === 'PENDING')
+          .map((t) => ({ id: t.id, description: t.description, amount: t.amount, date: t.date })),
+        cards: accounts
+          .filter((a) => a.type === 'CREDIT_CARD')
+          .map((a) => ({ id: a.id, name: a.name, dueDay: a.dueDay, used: a.utilization?.used ?? 0 })),
+      },
+      now,
+    ),
+  )
 
   const cashflow = monthlySeries(txns, now, 6)
   const deltas = kpiDeltas(cashflow)

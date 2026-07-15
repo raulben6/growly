@@ -270,3 +270,41 @@ describe.skipIf(!process.env.DATABASE_URL)('getDashboardData · cashflow y delta
     expect(d.deltas).toEqual({ incomePct: null, expensePct: null })
   })
 })
+
+describe.skipIf(!process.env.DATABASE_URL)('getDashboardData · alertas', () => {
+  const email = `dashalert_${Date.now()}@growly.app`
+  let uid = ''
+  const now = new Date()
+  const hoyUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()))
+
+  beforeAll(async () => {
+    uid = (await prisma.user.create({ data: { name: 'DashAlert', email } })).id
+    const acc = await prisma.account.create({ data: { userId: uid, name: 'C', type: 'CHECKING' } })
+    const cat = await prisma.category.create({ data: { userId: uid, name: 'DashAlertCat', kind: 'EXPENSE' } })
+    await prisma.budget.create({
+      data: { userId: uid, categoryId: cat.id, year: now.getFullYear(), month: now.getMonth(), amount: 100_000 },
+    })
+    await prisma.transaction.create({
+      data: {
+        userId: uid, accountId: acc.id, categoryId: cat.id, type: 'EXPENSE', amount: 86_000,
+        description: 'Súper', date: hoyUTC, status: 'CLEARED',
+      },
+    })
+  })
+  afterAll(async () => {
+    await prisma.notification.deleteMany({ where: { userId: uid } })
+    await prisma.transaction.deleteMany({ where: { userId: uid } })
+    await prisma.budget.deleteMany({ where: { userId: uid } })
+    await prisma.category.deleteMany({ where: { userId: uid } })
+    await prisma.account.deleteMany({ where: { userId: uid } })
+    await prisma.user.delete({ where: { id: uid } })
+  })
+
+  it('cargar el dashboard persiste la alerta del presupuesto sin duplicar', async () => {
+    await getDashboardData(uid, now)
+    await getDashboardData(uid, now)
+    const notifs = await prisma.notification.findMany({ where: { userId: uid } })
+    expect(notifs).toHaveLength(1)
+    expect(notifs[0].type).toBe('BUDGET_WARN')
+  })
+})
