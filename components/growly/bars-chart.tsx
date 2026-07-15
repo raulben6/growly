@@ -17,28 +17,30 @@ export function BarsChart({ series }: { series: MonthPoint[] }) {
           </span>
         </div>
       </div>
-      <div className="flex h-[130px] items-end justify-between gap-3">
-        {series.map((p, i) => (
-          <div key={`${p.year}-${p.month}`} className="flex flex-1 flex-col items-center gap-1.5">
-            <div className="flex h-[110px] items-end gap-1">
-              <div
-                data-testid={`bar-income-${i}`}
-                className="w-[11px] rounded-[3px] bg-acc"
-                style={{ height: `${Math.round((p.income / max) * 100)}%` }}
-              />
-              <div
-                data-testid={`bar-expense-${i}`}
-                className="w-[11px] rounded-[3px] bg-destructive"
-                style={{ height: `${Math.round((p.expense / max) * 100)}%` }}
-              />
+      <div className="overflow-x-auto">
+        <div className="flex h-[130px] min-w-full items-end justify-between gap-3">
+          {series.map((p, i) => (
+            <div key={`${p.year}-${p.month}`} className="flex flex-1 flex-col items-center gap-1.5">
+              <div className="flex h-[110px] items-end gap-1">
+                <div
+                  data-testid={`bar-income-${i}`}
+                  className="w-[11px] rounded-[3px] bg-acc"
+                  style={{ height: `${Math.round((p.income / max) * 100)}%` }}
+                />
+                <div
+                  data-testid={`bar-expense-${i}`}
+                  className="w-[11px] rounded-[3px] bg-destructive"
+                  style={{ height: `${Math.round((p.expense / max) * 100)}%` }}
+                />
+              </div>
+              <span
+                className={`text-[10px] ${i === last ? 'font-extrabold text-foreground' : 'font-semibold text-muted-foreground'}`}
+              >
+                {shortMonthName(p.month)}
+              </span>
             </div>
-            <span
-              className={`text-[10px] ${i === last ? 'font-extrabold text-foreground' : 'font-semibold text-muted-foreground'}`}
-            >
-              {shortMonthName(p.month)}
-            </span>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   )
