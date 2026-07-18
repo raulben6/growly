@@ -21,6 +21,9 @@ const googleProviders =
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
+  // En serverless (Vercel) el host llega por cabecera; confiamos en él para que
+  // los redirects de sesión resuelvan la URL correcta detrás del proxy de la plataforma.
+  trustHost: true,
   session: { strategy: 'jwt' },
   pages: { signIn: '/login' },
   providers: [
