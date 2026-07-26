@@ -1,10 +1,11 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
 import {
   monthlyTotals, categoryBreakdown, upcomingPayments, recentTransactions,
   getDashboardData, type DashTx,
 } from '@/lib/dashboard'
 import { prisma } from '@/lib/prisma'
 import { addDaysUTC } from '@/lib/recurrence'
+import * as notifications from '@/lib/notifications'
 
 const cats = [
   { id: 'c1', name: 'Comida', colorHex: '#3B82F6' },
@@ -306,5 +307,20 @@ describe.skipIf(!process.env.DATABASE_URL)('getDashboardData · alertas', () => 
     const notifs = await prisma.notification.findMany({ where: { userId: uid } })
     expect(notifs).toHaveLength(1)
     expect(notifs[0].type).toBe('BUDGET_WARN')
+  })
+
+  it('no tumba el dashboard si la persistencia de alertas falla (best-effort)', async () => {
+    const spy = vi
+      .spyOn(notifications, 'persistAlertCandidates')
+      .mockRejectedValue(new Error('neon caído'))
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    try {
+      const d = await getDashboardData(uid, now)
+      expect(spy).toHaveBeenCalled() // el trigger de alertas se intentó
+      expect(d.monthly).toBeDefined() // pero el dashboard igual devolvió sus datos
+    } finally {
+      spy.mockRestore()
+      errSpy.mockRestore()
+    }
   })
 })

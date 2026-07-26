@@ -123,22 +123,29 @@ export async function getDashboardData(userId: string, now: Date) {
     }
   })
 
-  // Alertas: evaluación perezosa con los datos ya cargados (spec F3 §5.2)
-  await persistAlertCandidates(
-    userId,
-    alertCandidates(
-      {
-        budget: budgets.length > 0 ? progress.totals : null,
-        pendingTxns: txns
-          .filter((t) => t.status === 'PENDING')
-          .map((t) => ({ id: t.id, description: t.description, amount: t.amount, date: t.date })),
-        cards: accounts
-          .filter((a) => a.type === 'CREDIT_CARD')
-          .map((a) => ({ id: a.id, name: a.name, dueDay: a.dueDay, used: a.utilization?.used ?? 0 })),
-      },
-      now,
-    ),
-  )
+  // Alertas: evaluación perezosa con los datos ya cargados (spec F3 §5.2).
+  // Best-effort: la persistencia de alertas es un efecto secundario; si falla
+  // (p. ej. un hipo de Neon) NO debe tumbar el dashboard, que es la home. Se
+  // reintenta sola en la próxima carga (createMany idempotente con skipDuplicates).
+  try {
+    await persistAlertCandidates(
+      userId,
+      alertCandidates(
+        {
+          budget: budgets.length > 0 ? progress.totals : null,
+          pendingTxns: txns
+            .filter((t) => t.status === 'PENDING')
+            .map((t) => ({ id: t.id, description: t.description, amount: t.amount, date: t.date })),
+          cards: accounts
+            .filter((a) => a.type === 'CREDIT_CARD')
+            .map((a) => ({ id: a.id, name: a.name, dueDay: a.dueDay, used: a.utilization?.used ?? 0 })),
+        },
+        now,
+      ),
+    )
+  } catch (err) {
+    console.error('persistAlertCandidates falló en el dashboard (best-effort):', err)
+  }
 
   const cashflow = monthlySeries(txns, now, 6)
   const deltas = kpiDeltas(cashflow)
