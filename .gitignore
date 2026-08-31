@@ -40,3 +40,11 @@ yarn-error.log*
 
 # prisma
 /prisma/*.db
+
+# AI assistant working files (kept local, not part of the project)
+CLAUDE.md
+AGENTS.md
+.claude/
+.agents/
+.superpowers/
+skills-lock.json
