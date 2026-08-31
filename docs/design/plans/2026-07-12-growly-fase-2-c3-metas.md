@@ -25,7 +25,7 @@
 - **Botones de solo-icono llevan `aria-label`** (además de `title` si se quiere tooltip): item de backlog C2 aplicado a lo nuevo.
 - **Diálogos:** shadcn sobre **Base UI**, `DialogTrigger` usa la prop `render={<elemento/>}` (NO children), `Dialog` controlado `open`/`onOpenChange`, ids de inputs con `React.useId()`, y al ABRIR se resincroniza el estado local con `initial` (lección C1). Patrón: `components/growly/budget-dialog.tsx`.
 - **Next.js 16:** `searchParams`/`params` son `Promise`. Ante dudas de API, leer `node_modules/next/dist/docs/` (ver `AGENTS.md`).
-- **Prisma pinned a 6.19.3**: no actualizar dependencias. Import de `prisma` al TOPE del archivo (nit del review C2 en budgets.ts, no repetirlo).
+- **Prisma pinned a 6.19.3**, no actualizar dependencias. Import de `prisma` al TOPE del archivo (nit del review C2 en budgets.ts, no repetirlo).
 - **`.env` es local y gitignored** (DATABASE_URL de Neon + AUTH_SECRET). NO modificarlo, NO imprimirlo, NO commitearlo.
 - **Tests de DB:** patrón `describe.skipIf(!process.env.DATABASE_URL)`, email único por archivo, cleanup en `afterAll` scoped a los usuarios del test. Si un test de DB falla SOLO por timeout (latencia Neon), reintentar con `--testTimeout=20000` y anotarlo.
 - **Comandos** (Windows PowerShell): `npx vitest run <archivo>` unit, `npx playwright test <archivo>` e2e, `npx prisma migrate dev --name <nombre>` migraciones.
@@ -1792,7 +1792,7 @@ Expected: PASS (3 tests).
 
 - [ ] **Step 3: Ampliar `getDashboardData` con test**
 
-1. Añadir al FINAL de `tests/dashboard.test.ts` (comprobar imports existentes; `getDashboardData`, `prisma` y los globals de vitest ya están importados por el describe de budget de C2: no duplicar):
+1. Añadir al FINAL de `tests/dashboard.test.ts` (comprobar imports existentes; `getDashboardData`, `prisma` y los globals de vitest ya están importados por el describe de budget de C2, no duplicar):
 
 ```ts
 describe.skipIf(!process.env.DATABASE_URL)('getDashboardData · goals', () => {

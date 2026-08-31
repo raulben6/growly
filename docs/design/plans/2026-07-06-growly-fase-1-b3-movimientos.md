@@ -16,7 +16,7 @@
 - **Categorías:** las 20 del sistema (`userId=null`, sembradas) + las propias del usuario. Los `icon` son nombres lucide; **debe haber fallback** para nombres desconocidos (y `paw` debe resolver a `PawPrint`).
 - **UI español**, formato `en-US`, tokens del design system. Fechas mostradas en español (`Hoy`/`Ayer`/`D MMM`).
 - **Funciones puras** sin `Date.now()`/`new Date()` interno: el "ahora" se pasa como parámetro.
-- **`.env` local/gitignored**: nunca tocar. **Convención de tests de DB** (del review de B2): email único por archivo, limpiar SOLO por `userId`/`email` propio, nunca `contains`. Tests de DB corren (dotenv) y limpian lo suyo.
+- **`.env` local/gitignored**, nunca tocar. **Convención de tests de DB** (del review de B2): email único por archivo, limpiar SOLO por `userId`/`email` propio, nunca `contains`. Tests de DB corren (dotenv) y limpian lo suyo.
 - Commits en español `feat:`/`test:`.
 
 ---

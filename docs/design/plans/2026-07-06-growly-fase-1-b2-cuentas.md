@@ -15,7 +15,7 @@
 - **Modelo `Account` unificado** (`AccountType`: `CHECKING|SAVINGS|CASH|CREDIT_CARD`); campos de tarjeta (`creditLimit`, `statementDay`, `dueDay`, `apr`, `minPayment`) solo aplican a `CREDIT_CARD`.
 - **Multi-tenant estricto:** toda consulta y mutación filtra por `userId` (obtenido de `auth()`), nunca confía en un id del cliente.
 - **UI en español**, formato numérico `en-US`, tokens del design system (`text-acc`, `bg-forest`, `text-destructive`, `shadow-[var(--shadow-card)]`, etc.). El schema NO guarda número de cuenta/tarjeta → subtítulo = banco; la tarjeta muestra dígitos genéricos `····` (estético).
-- **`.env` es local y gitignored**: nunca tocarlo/commitearlo. `session.user.id` ya existe (fix de Fase 0).
+- **`.env` es local y gitignored**, nunca tocarlo/commitearlo. `session.user.id` ya existe (fix de Fase 0).
 - **Tests:** Vitest TDD; los que tocan DB corren gracias a `dotenv` en `tests/setup.ts` y limpian lo que crean. Commits en español `feat:`/`test:`.
 
 ---

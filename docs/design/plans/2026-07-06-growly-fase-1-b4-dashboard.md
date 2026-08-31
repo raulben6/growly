@@ -16,7 +16,7 @@
 - **Multi-tenant:** todo por `userId` de `auth()`.
 - **Agregaciones puras** sin `Date.now()`/`new Date()` internos; el `now` se pasa como parámetro (la página lo inyecta con `new Date()`).
 - **UI español**, formato `en-US`, tokens del design system (hero `bg-forest`, `text-acc`, etc.).
-- **`.env` local/gitignored**: nunca tocar. Convención de tests de DB (email único por archivo, limpiar por `userId`). Commits `feat:`/`test:`.
+- **`.env` local/gitignored**, nunca tocar. Convención de tests de DB (email único por archivo, limpiar por `userId`). Commits `feat:`/`test:`.
 
 ---
 

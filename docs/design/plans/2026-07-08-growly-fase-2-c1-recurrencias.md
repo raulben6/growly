@@ -18,7 +18,7 @@
 - **UI en español**, tokens del design system ya definidos en `app/globals.css` (clases `bg-card`, `text-muted-foreground`, `bg-forest`, `text-destructive`, `shadow-[var(--shadow-card)]`, radios `rounded-[11px]`/`rounded-[22px]`).
 - **Diálogos:** shadcn sobre **Base UI**, `DialogTrigger` usa la prop `render={<elemento/>}` (NO children), `Dialog` controlado con `open`/`onOpenChange`. Copiar el patrón de `components/growly/transaction-dialog.tsx`.
 - **Next.js 16:** `searchParams` es `Promise` y se hace `await`. Este repo usa una versión de Next con breaking changes, ante cualquier duda de API, leer `node_modules/next/dist/docs/` (ver `AGENTS.md`).
-- **Prisma pinned a 6.19.3**: no actualizar dependencias.
+- **Prisma pinned a 6.19.3**, no actualizar dependencias.
 - **`.env` es local y gitignored** (contiene `DATABASE_URL` de Neon y `AUTH_SECRET`). NO modificarlo, NO imprimirlo, NO commitearlo.
 - **Tests de DB:** patrón `describe.skipIf(!process.env.DATABASE_URL)`, email único por archivo (`` `algo_${Date.now()}@growly.app` ``), cleanup en `afterAll` scoped al usuario del test. `tests/setup.ts` ya carga dotenv y desconecta prisma.
 - **Comandos** (Windows PowerShell): `npx vitest run <archivo>` para unit, `npx playwright test <archivo>` para e2e (levanta `next dev` solo), `npx prisma migrate dev` para migraciones.

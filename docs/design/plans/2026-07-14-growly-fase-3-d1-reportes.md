@@ -22,7 +22,7 @@
 - **Next.js 16:** `searchParams` es `Promise` (await). Reutilizar helpers existentes: `prevMonth`/`YearMonth` de `lib/month-param`, `daysInMonth`/`shortMonthName` de `lib/calendar`.
 - **UI en español**, tokens y radios de la casa (`rounded-[11px]`/`[18px]`/`[20px]`/`[22px]`, `shadow-[var(--shadow-card)]`); tabs como las de /movimientos (`bg-forest text-white` activa).
 - **Tests con fecha:** reloj fijado `vi.useFakeTimers({ toFake: ['Date'] })` donde "hoy" importe. Tests de datos con fechas `Date.UTC` (portables entre offsets).
-- **Prisma pinned 6.19.3**; `.env` local/gitignored: no tocar. Lint baseline conocido: 1 error pre-existente en `components/growly/category-donut.tsx`.
+- **Prisma pinned 6.19.3**; `.env` local/gitignored, no tocar. Lint baseline conocido: 1 error pre-existente en `components/growly/category-donut.tsx`.
 - **Tests de DB:** `describe.skipIf(!process.env.DATABASE_URL)`; timeouts Neon → `--testTimeout=20000` y anotarlo.
 - Commits `feat:`/`test:`/`fix:` en español.
 
@@ -875,7 +875,7 @@ git commit -m "feat: página /reportes con toggle de periodo, KPIs con deltas y 
 
 - [ ] **Step 1: Test del data layer (RED)**
 
-Añadir al FINAL de `tests/dashboard.test.ts` (imports ya presentes de los describes de C2/C3: no duplicar):
+Añadir al FINAL de `tests/dashboard.test.ts` (imports ya presentes de los describes de C2/C3, no duplicar):
 
 ```ts
 describe.skipIf(!process.env.DATABASE_URL)('getDashboardData · cashflow y deltas', () => {
