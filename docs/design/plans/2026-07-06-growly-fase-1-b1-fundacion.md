@@ -1,8 +1,8 @@
-# Growly Fase 1 · B1 — Fundación (dinero + saldos) · Implementation Plan
+# Growly Fase 1 · B1: Fundación (dinero + saldos) · Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Construir la capa de lógica pura del núcleo financiero — formateo de dinero (centavos ↔ display), cálculo de saldos/patrimonio/utilización de tarjeta, y los componentes de visualización de importes — todo con TDD, sin tocar base de datos ni UI de páginas todavía.
+**Goal:** Construir la capa de lógica pura del núcleo financiero, formateo de dinero (centavos ↔ display), cálculo de saldos/patrimonio/utilización de tarjeta, y los componentes de visualización de importes, todo con TDD, sin tocar base de datos ni UI de páginas todavía.
 
 **Architecture:** Funciones puras en `lib/money.ts` y `lib/balances.ts` que operan sobre objetos planos (estructuralmente compatibles con los modelos de Prisma, pero sin depender de él), más componentes de presentación en `components/growly/money.tsx`. Al ser puras, se prueban exhaustivamente sin DB. B2 (Cuentas), B3 (Movimientos) y B4 (Dashboard) consumen esta base.
 
@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - **Dinero = `Int` en centavos** siempre. Nunca `Float`. Todo formateo pasa por `lib/money.ts`.
-- **Formato numérico `en-US`** (agrupación con coma, decimal con punto: `$18,240.00`) aunque el texto de la UI sea español — así lo muestran los diseños. Símbolo por moneda vía `Intl`, **default `USD` (`$`)**, **sin conversión FX**.
+- **Formato numérico `en-US`** (agrupación con coma, decimal con punto: `$18,240.00`) aunque el texto de la UI sea español, así lo muestran los diseños. Símbolo por moneda vía `Intl`, **default `USD` (`$`)**, **sin conversión FX**.
 - **Semántica de saldo:** `accountBalance` cuenta SOLO movimientos con `status !== 'PENDING'` (CLEARED o sin estado). Los `PENDING` con fecha futura son "próximos pagos" / dinero comprometido, NO parte del saldo disponible.
 - **Funciones puras:** nada de `Date.now()`/`Math.random()`/`new Date()` sin argumento dentro de la lógica; cualquier "ahora" se pasa como parámetro.
 - **Tokens de color:** ingresos en `text-acc` (verde), gastos en `text-foreground` (neutro), según el diseño (el gasto NO va en rojo).
@@ -36,7 +36,7 @@ tests/
 
 ---
 
-### Task 1: `lib/money.ts` — formateo y parseo de dinero
+### Task 1: `lib/money.ts`, formateo y parseo de dinero
 
 **Files:**
 - Create: `lib/money.ts`
@@ -45,10 +45,10 @@ tests/
 **Interfaces:**
 - Consumes: nada.
 - Produces:
-  - `formatMoney(cents: number, opts?: { withCents?: boolean; currency?: string }): string` — devuelve la **magnitud** formateada (sin signo), p. ej. `formatMoney(1824000)` → `"$18,240.00"`, `formatMoney(1824000, { withCents: false })` → `"$18,240"`. `withCents` default `true`, `currency` default `'USD'`.
-  - `toCents(amount: number): number` — `Math.round(amount * 100)`.
-  - `fromCents(cents: number): number` — `cents / 100`.
-  - `parseAmountToCents(input: string): number | null` — parsea `"1,234.56"`, `"$1,234.56"`, `"62.3"` → `123456`, `123456`, `6230`; devuelve `null` si no es un número positivo finito.
+  - `formatMoney(cents: number, opts?: { withCents?: boolean; currency?: string }): string`: devuelve la **magnitud** formateada (sin signo), p. ej. `formatMoney(1824000)` → `"$18,240.00"`, `formatMoney(1824000, { withCents: false })` → `"$18,240"`. `withCents` default `true`, `currency` default `'USD'`.
+  - `toCents(amount: number): number`: `Math.round(amount * 100)`.
+  - `fromCents(cents: number): number`: `cents / 100`.
+  - `parseAmountToCents(input: string): number | null`: parsea `"1,234.56"`, `"$1,234.56"`, `"62.3"` → `123456`, `123456`, `6230`; devuelve `null` si no es un número positivo finito.
 
 - [ ] **Step 1: Escribir el test (debe fallar)**
 
@@ -149,7 +149,7 @@ git commit -m "feat: lib/money — formateo y parseo de dinero en centavos"
 
 ---
 
-### Task 2: `lib/balances.ts` — saldos, utilización de tarjeta y patrimonio neto
+### Task 2: `lib/balances.ts`, saldos, utilización de tarjeta y patrimonio neto
 
 **Files:**
 - Create: `lib/balances.ts`
@@ -159,10 +159,10 @@ git commit -m "feat: lib/money — formateo y parseo de dinero en centavos"
 - Consumes: nada (opera sobre objetos planos).
 - Produces:
   - Tipos `TxInput` y `AccountInput` (abajo).
-  - `accountBalance(account: AccountInput, txns: TxInput[]): number` — `initialBalance` + entradas − salidas de los movimientos **CLEARED** (ignora `PENDING`). INCOME suma, EXPENSE resta, TRANSFER resta de la cuenta origen (`accountId`) y suma a la destino (`transferAccountId`).
-  - `cardUsed(card: AccountInput, txns: TxInput[]): number` — deuda usada de una tarjeta = `initialBalance` + Σ(EXPENSE con `accountId`===tarjeta) − Σ(TRANSFER con `transferAccountId`===tarjeta) [pagos]. Solo CLEARED.
-  - `cardUtilization(card: AccountInput, txns: TxInput[]): { used: number; available: number; pct: number }` — `available = (creditLimit ?? 0) − used`; `pct = creditLimit ? redondear(used/creditLimit*100) : 0`.
-  - `netWorth(accounts: AccountInput[], txns: TxInput[]): number` — Σ(`accountBalance` de cuentas no-tarjeta) − Σ(`cardUsed` de tarjetas).
+  - `accountBalance(account: AccountInput, txns: TxInput[]): number`: `initialBalance` + entradas − salidas de los movimientos **CLEARED** (ignora `PENDING`). INCOME suma, EXPENSE resta, TRANSFER resta de la cuenta origen (`accountId`) y suma a la destino (`transferAccountId`).
+  - `cardUsed(card: AccountInput, txns: TxInput[]): number`: deuda usada de una tarjeta = `initialBalance` + Σ(EXPENSE con `accountId`===tarjeta) − Σ(TRANSFER con `transferAccountId`===tarjeta) [pagos]. Solo CLEARED.
+  - `cardUtilization(card: AccountInput, txns: TxInput[]): { used: number; available: number; pct: number }`: `available = (creditLimit ?? 0) − used`; `pct = creditLimit ? redondear(used/creditLimit*100): 0`.
+  - `netWorth(accounts: AccountInput[], txns: TxInput[]): number`: Σ(`accountBalance` de cuentas no-tarjeta) − Σ(`cardUsed` de tarjetas).
 
 - [ ] **Step 1: Escribir el test (debe fallar)**
 
@@ -306,7 +306,7 @@ git commit -m "feat: lib/balances — saldo, utilización de tarjeta y patrimoni
 
 ---
 
-### Task 3: `components/growly/money.tsx` — `<Money>` y `<SignedAmount>`
+### Task 3: `components/growly/money.tsx`, `<Money>` y `<SignedAmount>`
 
 **Files:**
 - Create: `components/growly/money.tsx`
@@ -315,8 +315,8 @@ git commit -m "feat: lib/balances — saldo, utilización de tarjeta y patrimoni
 **Interfaces:**
 - Consumes: `formatMoney` de `@/lib/money`; `cn` de `@/lib/utils` (helper de shadcn ya existente).
 - Produces:
-  - `<Money cents={number} withCents?={boolean} currency?={string} className?={string} />` — renderiza un `<span>` con la magnitud formateada.
-  - `<SignedAmount cents={number} currency?={string} className?={string} />` — renderiza un `<span>` con signo (`+`/`−`) y color: `cents >= 0` → `text-acc` con `+`; `cents < 0` → `text-foreground` con `−`. La magnitud viene de `formatMoney`.
+  - `<Money cents={number} withCents?={boolean} currency?={string} className?={string} />`: renderiza un `<span>` con la magnitud formateada.
+  - `<SignedAmount cents={number} currency?={string} className?={string} />`: renderiza un `<span>` con signo (`+`/`−`) y color: `cents >= 0` → `text-acc` con `+`; `cents < 0` → `text-foreground` con `−`. La magnitud viene de `formatMoney`.
 
 - [ ] **Step 1: Escribir el test (debe fallar)**
 

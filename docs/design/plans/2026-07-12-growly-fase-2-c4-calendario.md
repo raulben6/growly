@@ -1,8 +1,8 @@
-# Growly Fase 2 · C4 — Calendario · Implementation Plan
+# Growly Fase 2 · C4: Calendario · Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Calendario financiero en `/calendario` (rejilla mensual lunes-primero con dots por tipo de evento + agenda del día seleccionado) que mezcla movimientos, pagos programados y cortes/vencimientos de tarjeta — precedido por la unificación de la convención de fechas UTC pendiente desde C1.
+**Goal:** Calendario financiero en `/calendario` (rejilla mensual lunes-primero con dots por tipo de evento + agenda del día seleccionado) que mezcla movimientos, pagos programados y cortes/vencimientos de tarjeta, precedido por la unificación de la convención de fechas UTC pendiente desde C1.
 
 **Architecture:** Task 1 unifica la convención de fechas en TODO el código existente: las fechas de datos son fechas-calendario a medianoche UTC y se leen con getters UTC; "hoy"/"mes actual" salen de los componentes locales de `now`. Sobre esa base, `lib/calendar.ts` (puro) calcula eventos por día, totales del mes (CLEARED + PENDING) y la rejilla; `CalendarView` (client) maneja la selección de día; la página server materializa recurrencias, enriquece los movimientos con su categoría y delega en el componente. Reutiliza `lib/month-param` y `MonthNav` de C2.
 
@@ -17,15 +17,15 @@
 - **Convención de fechas UNIFICADA (la establece Task 1; el resto del plan la asume):** las fechas de datos (`Transaction.date`, `GoalContribution.date`) son **fechas-calendario a medianoche UTC** (vienen de inputs `type=date` → `z.coerce.date`) y se LEEN SIEMPRE con getters UTC (`getUTCFullYear`/`getUTCMonth`/`getUTCDate`). "Hoy" y "el mes actual" se derivan de los componentes **locales** de `now` (el día de calendario del usuario). Ninguna función debe usar getters locales sobre fechas de datos.
 - **Dinero:** centavos `Int`; formateo con `<Money>`/`<SignedAmount>` existentes. El monto de la agenda va con signo (`SignedAmount`: income +, expense −); los eventos de tarjeta no llevan importe.
 - **Multi-tenant:** `userId` solo de `auth()`; la página redirige a /login sin sesión.
-- **El calendario es planificación:** `calendarMonthTotals` cuenta CLEARED **y** PENDING (a diferencia de los KPIs del dashboard, que solo CLEARED) — se documenta en el código. TRANSFER no es ingreso ni gasto para los totales; en la agenda se muestra como `expense` con meta "Transferencia".
+- **El calendario es planificación:** `calendarMonthTotals` cuenta CLEARED **y** PENDING (a diferencia de los KPIs del dashboard, que solo CLEARED), se documenta en el código. TRANSFER no es ingreso ni gasto para los totales; en la agenda se muestra como `expense` con meta "Transferencia".
 - **Dots (spec §8.1):** verde = ingreso, rojo = gasto/pago, gris = evento de tarjeta; prioridad **rojo > verde > gris**.
 - **Tarjetas (spec §8.1):** solo `CREDIT_CARD` no archivadas; "Corte · <tarjeta>" el `statementDay`, "Pago tarjeta · <tarjeta>" el `dueDay`; si el día no existe en el mes, se ajusta al último día (31 → 30/28/29). Sin importe.
 - **Semana empieza LUNES**; cabecera `L M X J V S D`. Hoy = círculo verde relleno; selección de día client-side, default hoy (o día 1 si el mes visto no es el actual). Meses navegables con `?m=YYYY-MM` (1-12 humano) vía `parseMonthParam`/`MonthNav` de C2 con `basePath="/calendario"`.
-- **La página llama `materializeRecurringForUser` antes de leer** (spec §8.2) — los PENDING de recurrencias deben aparecer.
+- **La página llama `materializeRecurringForUser` antes de leer** (spec §8.2): los PENDING de recurrencias deben aparecer.
 - **Sidebar:** nueva entrada en `NAV_ITEMS` ENTRE Metas y Cuentas: `{ href: '/calendario', label: 'Calendario', icon: CalendarDays }`.
 - **UI en español**, tokens del design system; botones de solo-icono o solo-número con `aria-label`.
 - **Tests con fecha:** reloj fijado con `vi.useFakeTimers({ toFake: ['Date'] })` (solo Date) donde "hoy" importe. **Nota para Task 1:** los tests RED/GREEN de la unificación dependen del offset de la máquina de desarrollo (UTC-6): el RED solo se manifiesta en offsets negativos, pero el GREEN es correcto en cualquier máquina.
-- **Next.js 16:** `searchParams` es `Promise` (await). Prisma pinned 6.19.3. `.env` local y gitignored — no tocar/imprimir/commitear.
+- **Next.js 16:** `searchParams` es `Promise` (await). Prisma pinned 6.19.3. `.env` local y gitignored, no tocar/imprimir/commitear.
 - **Tests de DB:** `describe.skipIf(!process.env.DATABASE_URL)`; timeouts de Neon → reintentar con `--testTimeout=20000` y anotarlo.
 - Commits `feat:`/`test:`/`fix:` en español.
 
@@ -42,7 +42,7 @@
 
 **Interfaces:**
 - Consumes: nada nuevo.
-- Produces: MISMAS firmas públicas (`groupTransactionsByDay`, `monthlyTotals`, `categoryBreakdown`, `budgetProgress`, `goalTotals`) — solo cambia la semántica interna de lectura de fechas a getters UTC. Las Tasks 2-5 asumen esta convención.
+- Produces: MISMAS firmas públicas (`groupTransactionsByDay`, `monthlyTotals`, `categoryBreakdown`, `budgetProgress`, `goalTotals`), solo cambia la semántica interna de lectura de fechas a getters UTC. Las Tasks 2-5 asumen esta convención.
 
 **El bug que arregla:** los datos se guardan a medianoche UTC pero se leían con getters locales; en offsets negativos (UTC-6) un movimiento del "12 jul" se agrupaba bajo "11 jul", y un gasto del día 1 del mes contaba en el mes anterior (KPIs, presupuesto, metas).
 
@@ -54,7 +54,7 @@
   const now = new Date('2026-07-06T12:00:00Z')
 ```
 
-a (constructor local — el "hoy" del usuario es su día de calendario local, y así el test es determinista en cualquier máquina):
+a (constructor local: el "hoy" del usuario es su día de calendario local, y así el test es determinista en cualquier máquina):
 
 ```ts
   const now = new Date(2026, 6, 6, 12)
@@ -202,7 +202,7 @@ Run: `npx vitest run tests/transactions.test.ts tests/dashboard.test.ts tests/bu
 Expected: PASS (los 4 nuevos + todos los preexistentes).
 
 Run: `npx vitest run --testTimeout=20000`
-Expected: TODA la suite verde (205 + 4 nuevos). Si algún test preexistente falla por esta convención, es un caso que dependía del bug — arreglar el TEST citando la convención nueva, no revertir la función; documentarlo en el reporte.
+Expected: TODA la suite verde (205 + 4 nuevos). Si algún test preexistente falla por esta convención, es un caso que dependía del bug, arreglar el TEST citando la convención nueva, no revertir la función; documentarlo en el reporte.
 
 - [ ] **Step 5: Commit**
 
@@ -213,7 +213,7 @@ git commit -m "fix: convención unificada de fechas UTC en agrupado por día, KP
 
 ---
 
-### Task 2: `lib/calendar.ts` puro — eventos, totales, dots, rejilla y etiquetas
+### Task 2: `lib/calendar.ts` puro, eventos, totales, dots, rejilla y etiquetas
 
 **Files:**
 - Create: `lib/calendar.ts`
@@ -225,11 +225,11 @@ git commit -m "fix: convención unificada de fechas UTC en agrupado por día, KP
   - `type CalTx = { id: string; type: 'INCOME' | 'EXPENSE' | 'TRANSFER'; amount: number; description: string; date: Date; status?: 'CLEARED' | 'PENDING'; categoryName?: string | null; categoryIcon?: string | null }`
   - `type CalCard = { name: string; type: string; archived?: boolean; statementDay?: number | null; dueDay?: number | null }`
   - `type CalendarEvent = { kind: 'income' | 'expense' | 'card'; date: Date; label: string; amount?: number; meta: string; icon: string | null; pending: boolean }`
-  - `calendarEvents(txns: CalTx[], accounts: CalCard[], year: number, month: number): Map<number, CalendarEvent[]>` — clave = día del mes (UTC).
+  - `calendarEvents(txns: CalTx[], accounts: CalCard[], year: number, month: number): Map<number, CalendarEvent[]>`: clave = día del mes (UTC).
   - `calendarMonthTotals(txns: CalTx[], year: number, month: number): { income: number; expense: number }`
   - `dayDotTone(events: CalendarEvent[]): 'expense' | 'income' | 'card' | null`
-  - `monthGridDays(year: number, month: number): (number | null)[]` — lunes-primero, nulls de relleno, longitud múltiplo de 7.
-  - `agendaDayLabel(year: number, month: number, day: number): string` — `'LUNES · 6 JUL'`.
+  - `monthGridDays(year: number, month: number): (number | null)[]`: lunes-primero, nulls de relleno, longitud múltiplo de 7.
+  - `agendaDayLabel(year: number, month: number, day: number): string`: `'LUNES · 6 JUL'`.
   - `daysInMonth(year: number, month: number): number`, `shortMonthName(month: number): string`.
 
 - [ ] **Step 1: Escribir los tests**
@@ -361,7 +361,7 @@ describe('agendaDayLabel / daysInMonth / shortMonthName', () => {
 - [ ] **Step 2: Verificar que fallan**
 
 Run: `npx vitest run tests/calendar.test.ts`
-Expected: FAIL — `Cannot find module '@/lib/calendar'`.
+Expected: FAIL, `Cannot find module '@/lib/calendar'`.
 
 - [ ] **Step 3: Implementar**
 
@@ -532,7 +532,7 @@ git commit -m "feat: lib/calendar puro — eventos por día, totales, dots, reji
 
 ---
 
-### Task 3: `CalendarView` — componente client de rejilla + agenda
+### Task 3: `CalendarView`, componente client de rejilla + agenda
 
 **Files:**
 - Create: `components/growly/calendar-view.tsx`
@@ -541,7 +541,7 @@ git commit -m "feat: lib/calendar puro — eventos por día, totales, dots, reji
 **Interfaces:**
 - Consumes: `agendaDayLabel`/`dayDotTone`/`CalendarEvent` (Task 2), `MonthNav` + `YearMonth` (C2), `<Money>`/`<SignedAmount>`, `CategoryIcon`, icono `CreditCard` de lucide.
 - Produces (Task 4 la consume):
-  - `CalendarView({ ym: YearMonth; todayDay: number | null; cells: (number | null)[]; eventsByDay: [number, CalendarEvent[]][]; totals: { income: number; expense: number }; monthShort: string })` — `todayDay` = día de hoy si el mes visto es el actual (si no, null); selección inicial `todayDay ?? 1`.
+  - `CalendarView({ ym: YearMonth; todayDay: number | null; cells: (number | null)[]; eventsByDay: [number, CalendarEvent[]][]; totals: { income: number; expense: number }; monthShort: string })`: `todayDay` = día de hoy si el mes visto es el actual (si no, null); selección inicial `todayDay ?? 1`.
 
 - [ ] **Step 1: Escribir los tests**
 
@@ -627,7 +627,7 @@ describe('CalendarView', () => {
 - [ ] **Step 2: Verificar que fallan**
 
 Run: `npx vitest run tests/calendar-view.test.tsx`
-Expected: FAIL — módulo inexistente.
+Expected: FAIL, módulo inexistente.
 
 - [ ] **Step 3: Implementar**
 
@@ -863,7 +863,7 @@ describe('página /calendario', () => {
 - [ ] **Step 2: Verificar que fallan**
 
 Run: `npx vitest run tests/calendario-page.test.tsx tests/sidebar.test.tsx`
-Expected: FAIL — la página no existe y el sidebar no tiene 'Calendario'.
+Expected: FAIL, la página no existe y el sidebar no tiene 'Calendario'.
 
 - [ ] **Step 3: Implementar**
 
@@ -973,7 +973,7 @@ git commit -m "feat: página /calendario con agenda del día y entrada en el sid
 
 ---
 
-### Task 5: e2e — gasto de hoy visible en el calendario
+### Task 5: e2e, gasto de hoy visible en el calendario
 
 **Files:**
 - Test: `tests/e2e/calendario.spec.ts`
@@ -1056,5 +1056,5 @@ git commit -m "test: e2e de calendario — gasto de hoy en agenda y chips"
 - §8.2 ruta propia `/calendario` con `?m=` (Task 4), entrada en NAV_ITEMS entre Metas y Cuentas con CalendarDays (Task 4), dos paneles (tarjeta calendario con chips + navegación ‹mes› + cabecera L M X J V S D lunes-primero + hoy en círculo verde + dots | agenda del día "DOMINGO · 12 JUL" con icono, subtítulo rojo si PENDING, Corte/Pago de tarjeta, monto con signo) → Tasks 3-4. Selección client-side default hoy/día 1 → Task 3. `materializeRecurringForUser` antes de leer → Task 4 (con aserción en el test de página).
 - §10 calendario: merge de eventos, ajuste statementDay/dueDay 31→30/28, totales con PENDING, prioridad de dots → Task 2; e2e adicional (gasto de hoy en agenda/chips) → Task 5.
 - §11: rama `feature/fase-2-c4`, review final de rama antes del merge (lo orquesta la skill). Sin migración (C4 no toca schema). Al mergear, Fase 2 completa.
-- TRANSFER: decisión documentada (agenda como expense/"Transferencia"; excluido de totales — coherente con monthlyTotals).
+- TRANSFER: decisión documentada (agenda como expense/"Transferencia"; excluido de totales, coherente con monthlyTotals).
 - Lecciones C1-C3 incorporadas: reloj fijado en tests de página, `aria-label` en los botones de día, reutilización de month-param/MonthNav, convención UTC como Global Constraint.

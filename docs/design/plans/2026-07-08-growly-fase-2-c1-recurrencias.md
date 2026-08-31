@@ -1,4 +1,4 @@
-# Growly Fase 2 · C1 — Recurrencias · Implementation Plan
+# Growly Fase 2 · C1: Recurrencias · Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -16,9 +16,9 @@
 - **Multi-tenant:** todo acceso a datos va scoped por `userId` obtenido de `auth()` en la action/página. Jamás un `userId` del cliente. Mutaciones sobre recursos existentes con `updateMany`/`deleteMany` + `where: { id, userId }`.
 - **Convención de fechas (igual que Fase 1):** los inputs `type=date` producen `YYYY-MM-DD` → `z.coerce.date()` → medianoche UTC. La aritmética de recurrencia usa getters/setters **UTC** (`getUTCDate`, `setUTCFullYear`…) para ser determinista. Comparaciones por `getTime()`.
 - **UI en español**, tokens del design system ya definidos en `app/globals.css` (clases `bg-card`, `text-muted-foreground`, `bg-forest`, `text-destructive`, `shadow-[var(--shadow-card)]`, radios `rounded-[11px]`/`rounded-[22px]`).
-- **Diálogos:** shadcn sobre **Base UI** — `DialogTrigger` usa la prop `render={<elemento/>}` (NO children), `Dialog` controlado con `open`/`onOpenChange`. Copiar el patrón de `components/growly/transaction-dialog.tsx`.
-- **Next.js 16:** `searchParams` es `Promise` y se hace `await`. Este repo usa una versión de Next con breaking changes — ante cualquier duda de API, leer `node_modules/next/dist/docs/` (ver `AGENTS.md`).
-- **Prisma pinned a 6.19.3** — no actualizar dependencias.
+- **Diálogos:** shadcn sobre **Base UI**, `DialogTrigger` usa la prop `render={<elemento/>}` (NO children), `Dialog` controlado con `open`/`onOpenChange`. Copiar el patrón de `components/growly/transaction-dialog.tsx`.
+- **Next.js 16:** `searchParams` es `Promise` y se hace `await`. Este repo usa una versión de Next con breaking changes, ante cualquier duda de API, leer `node_modules/next/dist/docs/` (ver `AGENTS.md`).
+- **Prisma pinned a 6.19.3**: no actualizar dependencias.
 - **`.env` es local y gitignored** (contiene `DATABASE_URL` de Neon y `AUTH_SECRET`). NO modificarlo, NO imprimirlo, NO commitearlo.
 - **Tests de DB:** patrón `describe.skipIf(!process.env.DATABASE_URL)`, email único por archivo (`` `algo_${Date.now()}@growly.app` ``), cleanup en `afterAll` scoped al usuario del test. `tests/setup.ts` ya carga dotenv y desconecta prisma.
 - **Comandos** (Windows PowerShell): `npx vitest run <archivo>` para unit, `npx playwright test <archivo>` para e2e (levanta `next dev` solo), `npx prisma migrate dev` para migraciones.
@@ -26,7 +26,7 @@
 
 ---
 
-### Task 1: Schema Prisma — `RecurringRule` + `Transaction.recurringRuleId` + migración
+### Task 1: Schema Prisma, `RecurringRule` + `Transaction.recurringRuleId` + migración
 
 **Files:**
 - Modify: `prisma/schema.prisma`
@@ -55,7 +55,7 @@ describe.skipIf(!process.env.DATABASE_URL)('schema RecurringRule', () => {
 - [ ] **Step 2: Verificar que falla**
 
 Run: `npx vitest run tests/recurring-schema.test.ts`
-Expected: FAIL — `prisma.recurringRule` es `undefined` (TypeError) o error de tipo.
+Expected: FAIL, `prisma.recurringRule` es `undefined` (TypeError) o error de tipo.
 
 - [ ] **Step 3: Añadir el schema**
 
@@ -112,9 +112,9 @@ y junto a los `@@index` existentes de Transaction:
   @@unique([recurringRuleId, date])
 ```
 
-(La unique con columna nullable no afecta a los movimientos normales — Postgres trata los NULL como distintos. Protege contra doble materialización concurrente, junto con `skipDuplicates` en Task 3.)
+(La unique con columna nullable no afecta a los movimientos normales: Postgres trata los NULL como distintos. Protege contra doble materialización concurrente, junto con `skipDuplicates` en Task 3.)
 
-3. Relaciones inversas — añadir una línea en cada modelo:
+3. Relaciones inversas: añadir una línea en cada modelo:
    - `model User`: `recurringRules RecurringRule[]`
    - `model Account`: `recurringRules RecurringRule[]`
    - `model Category`: `recurringRules RecurringRule[]`
@@ -125,7 +125,7 @@ Run: `npx prisma validate`
 Expected: `The schema at prisma/schema.prisma is valid`
 
 Run: `npx prisma migrate dev --name recurring_rules`
-Expected: `Your database is now in sync with your schema` + cliente regenerado. (Usa el `DATABASE_URL` de `.env` — no imprimir su valor.)
+Expected: `Your database is now in sync with your schema` + cliente regenerado. (Usa el `DATABASE_URL` de `.env`, no imprimir su valor.)
 
 - [ ] **Step 5: Verificar que el test pasa**
 
@@ -144,7 +144,7 @@ git commit -m "feat: schema RecurringRule + Transaction.recurringRuleId (C1 recu
 
 ---
 
-### Task 2: `lib/recurrence.ts` — cálculo puro de ocurrencias
+### Task 2: `lib/recurrence.ts`, cálculo puro de ocurrencias
 
 **Files:**
 - Create: `lib/recurrence.ts`
@@ -254,7 +254,7 @@ describe('helpers', () => {
 - [ ] **Step 2: Verificar que fallan**
 
 Run: `npx vitest run tests/recurrence.test.ts`
-Expected: FAIL — `Cannot find module '@/lib/recurrence'`
+Expected: FAIL, `Cannot find module '@/lib/recurrence'`
 
 - [ ] **Step 3: Implementar `lib/recurrence.ts`**
 
@@ -360,7 +360,7 @@ git commit -m "feat: lib/recurrence — cálculo puro de ocurrencias (fin de mes
 
 ---
 
-### Task 3: `lib/recurring.ts` — materialización + confirmar
+### Task 3: `lib/recurring.ts`, materialización + confirmar
 
 **Files:**
 - Create: `lib/recurring.ts`
@@ -477,7 +477,7 @@ describe.skipIf(!process.env.DATABASE_URL)('confirmTransactionForUser', () => {
 - [ ] **Step 2: Verificar que fallan**
 
 Run: `npx vitest run tests/recurring.test.ts`
-Expected: FAIL — `Cannot find module '@/lib/recurring'`
+Expected: FAIL, `Cannot find module '@/lib/recurring'`
 
 - [ ] **Step 3: Implementar `lib/recurring.ts`**
 
@@ -547,14 +547,14 @@ git commit -m "feat: materialización perezosa de recurrencias + confirmar PENDI
 
 ---
 
-### Task 4: `lib/recurring.ts` — CRUD de reglas con semántica de edición
+### Task 4: `lib/recurring.ts`, CRUD de reglas con semántica de edición
 
 **Files:**
 - Modify: `lib/recurring.ts`
 - Test: `tests/recurring-crud.test.ts`
 
 **Interfaces:**
-- Consumes: Task 3 (`materializeRecurringForUser`), `RecurringRuleFormValues` — se define en Task 5 pero para no bloquear, este task define el tipo localmente idéntico (ver Step 3; Task 5 lo sustituye por el import de validators).
+- Consumes: Task 3 (`materializeRecurringForUser`), `RecurringRuleFormValues`, se define en Task 5 pero para no bloquear, este task define el tipo localmente idéntico (ver Step 3; Task 5 lo sustituye por el import de validators).
 - Produces (Tasks 5 y 7 dependen de estas firmas):
   - `getRecurringRulesForUser(userId)` → reglas con `include: { account: { select: { name } }, category: { select: { name, icon } } }`, orden `createdAt asc`
   - `createRecurringRuleForUser(userId, data: RecurringRuleData)`
@@ -674,7 +674,7 @@ describe.skipIf(!process.env.DATABASE_URL)('CRUD de reglas recurrentes', () => {
 - [ ] **Step 2: Verificar que fallan**
 
 Run: `npx vitest run tests/recurring-crud.test.ts`
-Expected: FAIL — `createRecurringRuleForUser` no exportada.
+Expected: FAIL, `createRecurringRuleForUser` no exportada.
 
 - [ ] **Step 3: Añadir el CRUD a `lib/recurring.ts`**
 
@@ -784,7 +784,7 @@ git commit -m "feat: CRUD de reglas recurrentes con semántica de edición prede
 - Consumes: Task 4 (CRUD lib), patrón de `lib/transaction-actions.ts` (auth + zod + ownership + revalidate).
 - Produces (Task 6/7 dependen de estos nombres):
   - `recurringRuleBaseSchema`, `createRecurringRuleSchema`, `type RecurringRuleFormValues` en `lib/validators.ts`
-  - Actions: `createRecurringRule(values: unknown)`, `updateRecurringRule(id: string, values: unknown)`, `setRecurringRuleActive(id: string, active: boolean)`, `deleteRecurringRule(id: string)`, `confirmTransaction(id: string)` — todas devuelven `{ ok: true } | { ok: false, error: string }`.
+  - Actions: `createRecurringRule(values: unknown)`, `updateRecurringRule(id: string, values: unknown)`, `setRecurringRuleActive(id: string, active: boolean)`, `deleteRecurringRule(id: string)`, `confirmTransaction(id: string)`, todas devuelven `{ ok: true } | { ok: false, error: string }`.
 
 - [ ] **Step 1: Escribir los tests que fallan**
 
@@ -897,7 +897,7 @@ describe.skipIf(!process.env.DATABASE_URL)('recurring actions', () => {
 - [ ] **Step 2: Verificar que fallan**
 
 Run: `npx vitest run tests/recurring-actions.test.ts`
-Expected: FAIL — `Cannot find module '@/lib/recurring-actions'`
+Expected: FAIL, `Cannot find module '@/lib/recurring-actions'`
 
 - [ ] **Step 3: Añadir schemas a `lib/validators.ts`**
 
@@ -1047,7 +1047,7 @@ export async function confirmTransaction(id: string) {
 ```
 
 Nota: `RecurringRuleData` (Task 4) y `RecurringRuleFormValues` (validators) son estructuralmente
-idénticos a propósito — `parsed.data` se pasa directo al CRUD sin conversión. No unificarlos con
+idénticos a propósito: `parsed.data` se pasa directo al CRUD sin conversión. No unificarlos con
 imports cruzados; mantener el tipo local en `lib/recurring.ts`.
 
 - [ ] **Step 5: Verificar que pasan**
@@ -1067,7 +1067,7 @@ git commit -m "feat: schemas y server actions de recurrencias (auth + zod + owne
 
 ---
 
-### Task 6: Componentes — badge/acción en TransactionRow, ConfirmTransactionButton, RecurringRow, RecurringDialog
+### Task 6: Componentes, badge/acción en TransactionRow, ConfirmTransactionButton, RecurringRow, RecurringDialog
 
 **Files:**
 - Modify: `components/growly/transaction-row.tsx`
@@ -1077,7 +1077,7 @@ git commit -m "feat: schemas y server actions de recurrencias (auth + zod + owne
 - Test: `tests/recurring-components.test.tsx`
 
 **Interfaces:**
-- Consumes: actions de Task 5; `CategoryIcon` (prop `name`), `SignedAmount` (prop `cents`), `Dialog/DialogTrigger(render)/DialogContent/DialogTitle`, `Button`, `Input`, `Label`, `parseAmountToCents` — todos existentes.
+- Consumes: actions de Task 5; `CategoryIcon` (prop `name`), `SignedAmount` (prop `cents`), `Dialog/DialogTrigger(render)/DialogContent/DialogTitle`, `Button`, `Input`, `Label`, `parseAmountToCents`, todos existentes.
 - Produces (Task 7 depende de estas props):
   - `TransactionRow` gana props opcionales `badge?: { label: string; tone: 'danger' | 'muted' }` y `action?: React.ReactNode` (retro-compatible).
   - `ConfirmTransactionButton({ id: string })`
@@ -1179,7 +1179,7 @@ describe('<RecurringDialog>', () => {
 - [ ] **Step 2: Verificar que fallan**
 
 Run: `npx vitest run tests/recurring-components.test.tsx`
-Expected: FAIL — módulos `confirm-transaction-button`/`recurring-row`/`recurring-dialog` no existen.
+Expected: FAIL, módulos `confirm-transaction-button`/`recurring-row`/`recurring-dialog` no existen.
 
 - [ ] **Step 3: Extender `components/growly/transaction-row.tsx`**
 
@@ -1565,7 +1565,7 @@ git commit -m "feat: componentes de recurrencias (fila, diálogo, confirmar) + b
 - Test: `tests/dashboard.test.ts` (añadir describe al final)
 
 **Interfaces:**
-- Consumes: todo lo anterior — `materializeRecurringForUser`, `getRecurringRulesForUser` (Task 3/4), `describeFrequency`, `nextDateForRule`, `formatShortDateUTC` (Task 2), componentes (Task 6).
+- Consumes: todo lo anterior, `materializeRecurringForUser`, `getRecurringRulesForUser` (Task 3/4), `describeFrequency`, `nextDateForRule`, `formatShortDateUTC` (Task 2), componentes (Task 6).
 - Produces: página con `searchParams: Promise<{ tipo?: string; vista?: string }>`; `getDashboardData` materializa antes de leer.
 
 - [ ] **Step 1: Escribir el test de integración del dashboard (falla)**
@@ -1609,7 +1609,7 @@ describe.skipIf(!process.env.DATABASE_URL)('getDashboardData materializa recurre
 - [ ] **Step 2: Verificar que falla**
 
 Run: `npx vitest run tests/dashboard.test.ts`
-Expected: FAIL — el nuevo describe: `comprometido` es 0 (no se materializó nada).
+Expected: FAIL, el nuevo describe: `comprometido` es 0 (no se materializó nada).
 
 - [ ] **Step 3: Materializar en `lib/dashboard.ts`**
 
@@ -1834,7 +1834,7 @@ async function RecurrentesView({
 }
 ```
 
-Nota para el implementador: `getTransactionsForUser` devuelve `status` en cada fila (el modelo completo) — no hace falta cambiar `lib/transactions.ts`. `getCategoriesForUser` devuelve `kind` e `icon`.
+Nota para el implementador: `getTransactionsForUser` devuelve `status` en cada fila (el modelo completo), no hace falta cambiar `lib/transactions.ts`. `getCategoriesForUser` devuelve `kind` e `icon`.
 
 - [ ] **Step 6: Verificación manual + suite**
 
@@ -1936,7 +1936,7 @@ git commit -m "test: e2e de recurrencias — regla, ocurrencia PENDING y confirm
 
 ## Verificación final del sub-plan (checklist de cierre)
 
-- [ ] `npx vitest run` — verde
-- [ ] `npx playwright test` — verde
-- [ ] `npx tsc --noEmit` — sin errores
+- [ ] `npx vitest run`: verde
+- [ ] `npx playwright test`: verde
+- [ ] `npx tsc --noEmit`: sin errores
 - [ ] Revisión manual en navegador: crear regla mensual → pestaña Movimientos muestra la ocurrencia; dashboard muestra el pago en "Próximos pagos" y lo resta en "Comprometido"; pausar la regla elimina las futuras; confirmar un vencido baja el saldo en `/cuentas`.

@@ -1,4 +1,4 @@
-# Growly · Fase 2 — Planificación (Presupuesto · Metas · Calendario · Recurrencias)
+# Growly · Fase 2: Planificación (Presupuesto · Metas · Calendario · Recurrencias)
 
 **Fecha:** 2026-07-08 · **Estado:** aprobada por el usuario
 **Precedente:** `2026-07-05-growly-mvp-design.md` (Fase 0 + Fase 1 completas y mergeadas a `master`).
@@ -126,9 +126,9 @@ model RecurringRule {
 
 ## 5. Motor de recurrencias (C1)
 
-### 5.1 `lib/recurrence.ts` — puro
+### 5.1 `lib/recurrence.ts`: puro
 
-- `nextOccurrences(rule, fromExclusive: Date, toInclusive: Date): Date[]` — fechas de la serie
+- `nextOccurrences(rule, fromExclusive: Date, toInclusive: Date): Date[]`: fechas de la serie
   dentro del rango. El ancla es `startDate`:
   - `MONTHLY`/`YEARLY`: mismo día del mes/año que `startDate`, con **ajuste de fin de mes**
     (regla anclada al 31 → 30 abr, 28/29 feb; nunca se desliza al mes siguiente).
@@ -136,14 +136,14 @@ model RecurringRule {
   - Respeta `endDate` (inclusive). Serie vacía si `fromExclusive >= toInclusive`.
 - Helper `describeFrequency(rule)` → "Cada mes · día 12", "Cada 2 semanas · lunes", etc.
 
-### 5.2 `lib/recurring.ts` — acceso a datos (scoped por userId)
+### 5.2 `lib/recurring.ts`: acceso a datos (scoped por userId)
 
 - `materializeRecurringForUser(userId, now)`:
   1. Horizonte = `now + 90 días`.
   2. Por cada regla `active` con `materializedThrough < horizonte` (o null):
      genera ocurrencias en `(max(materializedThrough, startDate - 1ms), min(horizonte, endDate)]`,
      crea `Transaction` `PENDING` (`recurringRuleId`, `type`, `amount`, `description`,
-     `accountId`, `categoryId`) y actualiza `materializedThrough = horizonte` — **todo dentro de
+     `accountId`, `categoryId`) y actualiza `materializedThrough = horizonte`: **todo dentro de
      `prisma.$transaction`** (idempotencia: la marca y las filas se mueven juntas).
   3. Si no hay nada pendiente, retorna sin escribir (rápido; se llama en cada carga).
 - CRUD de reglas: `createRecurringRuleForUser`, `updateRecurringRuleForUser`,
@@ -156,12 +156,12 @@ model RecurringRule {
     y (si sigue activa) se re-materializa desde `now` (`materializedThrough = now` antes de
     regenerar). Ocurrencias pasadas y CLEARED nunca se tocan. Al borrar la regla, el
     histórico CLEARED queda con `recurringRuleId = null` (SetNull).
-- `confirmTransactionForUser(userId, id)` — `updateMany({ id, userId, status: PENDING })` →
+- `confirmTransactionForUser(userId, id)`: `updateMany({ id, userId, status: PENDING })` →
   `CLEARED` (la fecha no cambia). Retorna `{ ok: false }` si no encontró fila.
 
 ### 5.3 Actions y UI
 
-- `lib/recurring-actions.ts`: create/update/pause/delete regla + `confirmTransaction` —
+- `lib/recurring-actions.ts`: create/update/pause/delete regla + `confirmTransaction`, 
   patrón actual (auth() + Zod + ownership check de cuenta/categoría + try/catch +
   `revalidatePath('/movimientos', '/', '/calendario')`).
 - `transactionSchema`-style `recurringRuleSchema` en `lib/validators.ts`: type ∈
@@ -174,7 +174,7 @@ model RecurringRule {
     "próxima: 12 jul", monto con signo, cuenta) + menú (pausar/reanudar, editar, borrar)
     + botón "Nueva recurrencia" → diálogo Base UI (tipo gasto/ingreso, monto, descripción,
     categoría, cuenta, frecuencia, primera fecha, fecha fin opcional).
-  - Pestaña Movimientos (la actual): filas PENDING ganan badge — `date <= now` → "Vencido" +
+  - Pestaña Movimientos (la actual): filas PENDING ganan badge, `date <= now` → "Vencido" +
     botón **Confirmar**; `date > now` → "Programado".
 - La página llama `materializeRecurringForUser` antes de leer datos (igual el dashboard en
   `getDashboardData` y `/calendario`).
@@ -185,7 +185,7 @@ model RecurringRule {
 
 ### 6.1 `lib/budgets.ts`
 
-- `getBudgetsForMonth(userId, year, month)` — lee los budgets del mes. **Auto-copia:** si el
+- `getBudgetsForMonth(userId, year, month)`: lee los budgets del mes. **Auto-copia:** si el
   mes pedido es el actual, no tiene filas y algún mes de los 12 anteriores sí, copia el más
   reciente (misma transacción). *Caso borde aceptado:* si el usuario borra todas las
   categorías del mes actual, reaparecen al recargar; para "no presupuestar" se quitan
@@ -203,12 +203,12 @@ model RecurringRule {
 
 - Header "Presupuesto" + selector de mes ‹ Julio 2026 › (navegable a pasados y futuros;
   query param `?m=2026-07`, default mes actual). Ojo con la convención: el param usa mes
-  humano 1-12 y la DB/código usan 0-11 — la conversión vive solo en el parseo del param
+  humano 1-12 y la DB/código usan 0-11: la conversión vive solo en el parseo del param
   (helper compartido con `/calendario`).
 - Hero oscuro (patrón BalanceHero): "Gastado de $4,500" → `$3,880` grande, `$620 disponible`
   a la derecha, barra de progreso, "86% del presupuesto usado · quedan 27 días", y línea de
   predicción: "A este ritmo: ~$4,340 este mes" (en rojo si supera el total).
-- Sección "Por categoría": tarjeta por categoría presupuestada — dot del color, nombre,
+- Sección "Por categoría": tarjeta por categoría presupuestada, dot del color, nombre,
   `$930 / $1,000`, barra con el color de la categoría; **excedida → monto y barra en
   `#C9584F`** (barra al 100%). Click/menú → editar límite o quitar. Botón "Añadir categoría"
   → diálogo (select de categorías EXPENSE sin presupuesto ese mes + importe).
@@ -225,10 +225,10 @@ categorías por % (excedida en rojo). Sin presupuesto → estado vacío con link
 
 ### 7.1 `lib/goals.ts`
 
-- `getGoalsForUser(userId)` — metas no archivadas con `saved` (suma de aportes,
+- `getGoalsForUser(userId)`: metas no archivadas con `saved` (suma de aportes,
   `_sum` aggregate) y `savedThisMonth`; orden por `createdAt`.
 - `createGoalForUser`, `updateGoalForUser`, `archiveGoalForUser` (updateMany + userId).
-- `addContributionForUser(userId, { goalId, amount, date?, note? })` — verifica que la meta
+- `addContributionForUser(userId, { goalId, amount, date?, note? })`: verifica que la meta
   es del usuario; `deleteContributionForUser(userId, id)`.
 - Puro: `goalProgress(goal, saved)` → `{ pct (cap 100 para la barra, real para el texto),
   completed }`.
@@ -252,7 +252,7 @@ categorías por % (excedida en rojo). Sin presupuesto → estado vacío con link
 
 ## 8. Calendario (C4)
 
-### 8.1 `lib/calendar.ts` — puro
+### 8.1 `lib/calendar.ts`: puro
 
 - `calendarEvents(txns, accounts, year, month)` → `Map<dayKey, CalendarEvent[]>` donde
   `CalendarEvent = { kind: 'income' | 'expense' | 'card', date, label, amount?, meta }`:
@@ -271,7 +271,7 @@ categorías por % (excedida en rojo). Sin presupuesto → estado vacío con link
   label: 'Calendario', icon: CalendarDays }`.
 - Layout escritorio dos paneles: izquierda la tarjeta calendario (chips "Ingresos jul
   +$6,120" verde / "Pagos jul −$2,036" rojo encima; navegación ‹ Julio 2026 ›; cabecera
-  L M X J V S D — semana empieza lunes; hoy en círculo verde relleno; dot bajo los días con
+  L M X J V S D: semana empieza lunes; hoy en círculo verde relleno; dot bajo los días con
   eventos), derecha la agenda del día seleccionado ("VIERNES · 5 JUL"): filas icono +
   nombre + subtítulo ("Pago programado" rojo si PENDING, nombre de categoría si CLEARED,
   "Corte de tarjeta"/"Pago de tarjeta") + monto con signo.
@@ -283,18 +283,18 @@ categorías por % (excedida en rojo). Sin presupuesto → estado vacío con link
 `getDashboardData` se amplía: llama `materializeRecurringForUser(userId, now)` al inicio, y
 devuelve además `budget` (resumen para el card) y `goals` (top 3). La fila de cards del
 diseño web queda: **Presupuesto | Próximos pagos | Metas de ahorro** (grid 3 col).
-El chart "Flujo de caja" del diseño es Fase 3 (Reportes) — fuera de alcance.
+El chart "Flujo de caja" del diseño es Fase 3 (Reportes): fuera de alcance.
 
 ## 10. Testing
 
 Mismo esquema que Fase 1 (Vitest + RTL unit, `.skipIf(!DATABASE_URL)` para DB, Playwright e2e,
 `workers: 1`):
 
-- **Recurrencias** (los más importantes): `nextOccurrences` — mensual normal, ancla día 31
+- **Recurrencias** (los más importantes): `nextOccurrences`, mensual normal, ancla día 31
   (abr→30, feb→28), 29 feb bisiesto/no bisiesto, BIWEEKLY, WEEKLY, YEARLY, endDate inclusive,
-  rango vacío. `materializeRecurringForUser` — genera exactamente las que faltan, idempotente
+  rango vacío. `materializeRecurringForUser`: genera exactamente las que faltan, idempotente
   (segunda llamada = 0 filas), regla pausada no genera, borrar PENDING no se regenera, editar
-  regla borra futuras y regenera. `confirmTransactionForUser` — CLEARED + ownership.
+  regla borra futuras y regenera. `confirmTransactionForUser`: CLEARED + ownership.
 - **Presupuesto**: `budgetProgress` (normal, excedido, sin gasto, ignora PENDING y otros
   meses), `budgetForecast` (run-rate, día 1), auto-copia (mes vacío copia, mes con filas no,
   mes pasado no copia).
@@ -313,9 +313,9 @@ cada uno con su migración Prisma y su review final de rama:
 
 | Sub-plan | Contenido | Dependencias |
 |---|---|---|
-| **C1 Recurrencias** | schema RecurringRule + `recurringRuleId`, lib/recurrence + lib/recurring, confirmación, pestañas en /movimientos | — |
-| **C2 Presupuesto** | schema Budget, lib/budgets, /presupuesto, card dashboard | — |
-| **C3 Metas** | schema Goal + GoalContribution, lib/goals, /metas, card dashboard | — |
+| **C1 Recurrencias** | schema RecurringRule + `recurringRuleId`, lib/recurrence + lib/recurring, confirmación, pestañas en /movimientos |: |
+| **C2 Presupuesto** | schema Budget, lib/budgets, /presupuesto, card dashboard |: |
+| **C3 Metas** | schema Goal + GoalContribution, lib/goals, /metas, card dashboard |: |
 | **C4 Calendario** | lib/calendar, /calendario, sidebar | C1 (mejor con PENDING reales) |
 
 Orden: C1 → C2 → C3 → C4.
@@ -323,7 +323,7 @@ Orden: C1 → C2 → C3 → C4.
 ## 12. Fuera de alcance (Fase 3+)
 
 - Chart "Flujo de caja" del dashboard, reportes y estadísticas avanzadas (Fase 3).
-- Alertas inteligentes y notificaciones — el calendario y el presupuesto dejan los datos
+- Alertas inteligentes y notificaciones: el calendario y el presupuesto dejan los datos
   listos (excedidos, vencimientos) para las alertas de Fase 3.
 - Transferencias recurrentes; auto-registro de recurrencias sin confirmación.
 - Presupuestos por cuenta o por tipo; presupuesto de ingresos.

@@ -1,8 +1,8 @@
-# Growly Fase 0 — Fundaciones · Implementation Plan
+# Growly Fase 0: Fundaciones · Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Dejar en pie una app Next.js con los tokens del Design System de Growly, la capa de datos (Prisma + PostgreSQL con schema y seed), autenticación (email+contraseña y Google) y el shell protegido (sidebar + topbar + tema claro/oscuro) — sin features financieras todavía.
+**Goal:** Dejar en pie una app Next.js con los tokens del Design System de Growly, la capa de datos (Prisma + PostgreSQL con schema y seed), autenticación (email+contraseña y Google) y el shell protegido (sidebar + topbar + tema claro/oscuro), sin features financieras todavía.
 
 **Architecture:** Next.js 16 App Router full-stack. Lectura en Server Components con Prisma; mutaciones en Server Actions validadas con Zod. Auth.js v5 con adapter de Prisma protege el grupo de rutas `(app)` vía `middleware.ts`. Los tokens de los diseños de Claude Design se portan literalmente a `globals.css` y alimentan shadcn/ui.
 
@@ -362,7 +362,7 @@ git commit -m "feat: tokens del design system, fuentes, tema y logo"
 
 ---
 
-### Task 3: Capa de datos — Prisma + schema + migración
+### Task 3: Capa de datos, Prisma + schema + migración
 
 **Files:**
 - Create: `prisma/schema.prisma`, `lib/prisma.ts`, `.env`, `.env.example`
@@ -1334,4 +1334,4 @@ git commit -m "feat: rutas de la app con placeholders (Fase 0 completa)"
 
 **Notas de ejecución:** los tests que tocan la base (`describe.skipIf(!process.env.DATABASE_URL)`) requieren `DATABASE_URL` y `AUTH_SECRET` en el entorno. Para la sintaxis exacta y actual de shadcn (Tailwind v4) y Auth.js v5, seguir las skills `vercel:shadcn` y la doc de Auth.js durante la ejecución.
 
-**Fuera de alcance (van en el Plan B — Fase 1):** `lib/money.ts`, `lib/balances.ts`, CRUD de Categorías/Cuentas/Tarjetas/Movimientos, y el Dashboard real con sus tarjetas, donut, próximos pagos y tabla.
+**Fuera de alcance (van en el Plan B: Fase 1):** `lib/money.ts`, `lib/balances.ts`, CRUD de Categorías/Cuentas/Tarjetas/Movimientos, y el Dashboard real con sus tarjetas, donut, próximos pagos y tabla.

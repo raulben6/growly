@@ -1,4 +1,4 @@
-# Growly Fase 3 · D2 — Alertas + Notificaciones · Implementation Plan
+# Growly Fase 3 · D2: Alertas + Notificaciones · Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -8,7 +8,7 @@
 
 **Tech Stack:** Next.js 16 App Router, Prisma 6.19.3 + Neon, Zod 4, Vitest + RTL, Playwright.
 
-**Spec:** `docs/superpowers/specs/2026-07-14-growly-fase-3-design.md` (secciones 2, 3, 4, 5, 7, 8 — sub-plan D2).
+**Spec:** `docs/superpowers/specs/2026-07-14-growly-fase-3-design.md` (secciones 2, 3, 4, 5, 7, 8, sub-plan D2).
 
 **Rama:** `feature/fase-3-d2` desde `master`. Merge a `master` tras el review final de rama.
 
@@ -17,7 +17,7 @@
 - **Multi-tenant:** todo scoped por `userId` de `auth()`; mutaciones con `updateMany` + `where: { id, userId }`; ids de actions por `idSchema` (existente en validators). Mensajes en español.
 - **Idempotencia:** unique `[userId, dedupeKey]` + `createMany({ skipDuplicates: true })`. Cada condición notifica UNA vez; los copys se congelan al crear (el diseño muestra texto estático). Confirmar/borrar el dato origen NO borra la notificación (historial).
 - **Claves estables (spec §5.1):** `budget-85-<YYYY-MM>`, `budget-over-<YYYY-MM>` (mes humano vía `monthParam` de lib/month-param), `tx-due-<txId>`, `tx-overdue-<txId>`, `card-due-<accountId>-<YYYY-MM del vencimiento>`.
-- **Umbrales exactos:** WARN `85 ≤ pct ≤ 100`; OVER `pct > 100` (pct redondeado de `budgetProgress` — consistente con card/página). PAYMENT_DUE `0 < date−now ≤ 3 días` (instantes); OVERDUE `date ≤ now`. CARD_DUE: próximo `dueDay` (ajustado al último día del mes si no existe) a ≤5 días del día de calendario local de hoy, y `used > 0`.
+- **Umbrales exactos:** WARN `85 ≤ pct ≤ 100`; OVER `pct > 100` (pct redondeado de `budgetProgress`, consistente con card/página). PAYMENT_DUE `0 < date−now ≤ 3 días` (instantes); OVERDUE `date ≤ now`. CARD_DUE: próximo `dueDay` (ajustado al último día del mes si no existe) a ≤5 días del día de calendario local de hoy, y `used > 0`.
 - **Fechas:** `Transaction.date` = fecha-calendario UTC (comparaciones por instante contra `now`, como el badge Vencido). `Notification.createdAt` = INSTANTE real → `relativeTimeLabel` usa getters LOCALES para mostrar (corrección documentada de la spec §5.1: un instante no es fecha-calendario). El "hoy" de tarjetas usa componentes locales de `now` + `daysInMonth` (convención C4).
 - **Trigger sin queries extra en el dashboard:** `getDashboardData` construye `AlertInput` con `txns`/`accounts`/`progress` ya cargados y llama `persistAlertCandidates`. La evaluación autónoma (`evaluateAlertsForUser`, con sus propias queries) es solo para `/notificaciones`.
 - **UI (diseño móvil isNotif):** chips "Todas | No leídas · N" (`?f=noleidas`), tarjetas con icono 40px tintado por tipo (WARN ámbar `bg-warning/15 text-warning`, resto rojo `bg-destructive/15 text-destructive`), título bold, cuerpo muted, tiempo relativo, dot `bg-acc` de no-leída, leídas con `opacity-60`, click en no-leída la marca. `/notificaciones` NO entra en NAV_ITEMS (se llega por la campana). "Nuevo inicio de sesión" del diseño queda FUERA.
@@ -26,7 +26,7 @@
 
 ---
 
-### Task 1: Schema Prisma — `Notification` + enum + migración
+### Task 1: Schema Prisma, `Notification` + enum + migración
 
 **Files:**
 - Modify: `prisma/schema.prisma`
@@ -55,7 +55,7 @@ describe.skipIf(!process.env.DATABASE_URL)('schema Notification', () => {
 - [ ] **Step 2: Verificar que falla**
 
 Run: `npx vitest run tests/notification-schema.test.ts`
-Expected: FAIL — `prisma.notification` es `undefined`.
+Expected: FAIL, `prisma.notification` es `undefined`.
 
 - [ ] **Step 3: Añadir el schema**
 
@@ -104,7 +104,7 @@ git commit -m "feat: modelo Notification con dedupeKey único por usuario"
 
 ---
 
-### Task 2: `lib/alerts.ts` puro — candidatas de alerta + tiempo relativo
+### Task 2: `lib/alerts.ts` puro, candidatas de alerta + tiempo relativo
 
 **Files:**
 - Create: `lib/alerts.ts`
@@ -118,7 +118,7 @@ git commit -m "feat: modelo Notification con dedupeKey único por usuario"
   - `type AlertInput = { budget: { pct: number; spent: number; limit: number } | null; pendingTxns: { id: string; description: string; amount: number; date: Date }[]; cards: { id: string; name: string; dueDay: number | null; used: number }[] }`
   - `alertCandidates(input: AlertInput, now: Date): AlertCandidate[]`
   - `nextCardDueDate(dueDay: number, now: Date): { year: number; month: number; day: number }`
-  - `relativeTimeLabel(date: Date, now: Date): string` — 'Ahora' (<1 min) · 'Hace N min' · 'Hace N h' (mismo día local) · 'Ayer' · 'D mes'.
+  - `relativeTimeLabel(date: Date, now: Date): string`: 'Ahora' (<1 min) · 'Hace N min' · 'Hace N h' (mismo día local) · 'Ayer' · 'D mes'.
 
 - [ ] **Step 1: Escribir los tests**
 
@@ -228,7 +228,7 @@ describe('relativeTimeLabel', () => {
 - [ ] **Step 2: Verificar que fallan**
 
 Run: `npx vitest run tests/alerts.test.ts`
-Expected: FAIL — `Cannot find module '@/lib/alerts'`.
+Expected: FAIL, `Cannot find module '@/lib/alerts'`.
 
 - [ ] **Step 3: Implementar**
 
@@ -378,7 +378,7 @@ git commit -m "feat: lib/alerts puro — candidatas con claves estables y tiempo
 
 ---
 
-### Task 3: `lib/notifications.ts` — persistencia idempotente y lecturas scoped
+### Task 3: `lib/notifications.ts`, persistencia idempotente y lecturas scoped
 
 **Files:**
 - Create: `lib/notifications.ts`
@@ -387,11 +387,11 @@ git commit -m "feat: lib/alerts puro — candidatas con claves estables y tiempo
 **Interfaces:**
 - Consumes: Task 1 (modelo), Task 2 (`alertCandidates`, tipos), `getBudgetsForMonth`/`budgetProgress`, `getTransactionsForUser`, `getAccountsWithBalances`.
 - Produces (Tasks 4 y 6 dependen de estas firmas):
-  - `persistAlertCandidates(userId: string, candidates: AlertCandidate[]): Promise<void>` — createMany skipDuplicates; no escribe si no hay candidatas.
-  - `evaluateAlertsForUser(userId: string, now?: Date): Promise<void>` — carga presupuesto/PENDING/tarjetas y persiste (para `/notificaciones`).
-  - `getNotificationsForUser(userId, opts?: { unreadOnly?: boolean })` — orden createdAt desc.
+  - `persistAlertCandidates(userId: string, candidates: AlertCandidate[]): Promise<void>`: createMany skipDuplicates; no escribe si no hay candidatas.
+  - `evaluateAlertsForUser(userId: string, now?: Date): Promise<void>`: carga presupuesto/PENDING/tarjetas y persiste (para `/notificaciones`).
+  - `getNotificationsForUser(userId, opts?: { unreadOnly?: boolean })`: orden createdAt desc.
   - `getUnreadCountForUser(userId): Promise<number>`
-  - `markNotificationReadForUser(userId, id, now?): Promise<{ ok: boolean }>` — solo si estaba no-leída.
+  - `markNotificationReadForUser(userId, id, now?): Promise<{ ok: boolean }>`: solo si estaba no-leída.
   - `markAllNotificationsReadForUser(userId, now?): Promise<{ ok: true }>`
 
 - [ ] **Step 1: Escribir los tests**
@@ -502,7 +502,7 @@ describe.skipIf(!process.env.DATABASE_URL)('notifications DB', () => {
 - [ ] **Step 2: Verificar que fallan**
 
 Run: `npx vitest run tests/notifications-db.test.ts`
-Expected: FAIL — `Cannot find module '@/lib/notifications'`.
+Expected: FAIL, `Cannot find module '@/lib/notifications'`.
 
 - [ ] **Step 3: Implementar**
 
@@ -652,7 +652,7 @@ describe.skipIf(!process.env.DATABASE_URL)('notification actions', () => {
 - [ ] **Step 2: Verificar que fallan**
 
 Run: `npx vitest run tests/notification-actions.test.ts`
-Expected: FAIL — `Cannot find module '@/lib/notification-actions'`.
+Expected: FAIL, `Cannot find module '@/lib/notification-actions'`.
 
 - [ ] **Step 3: Implementar**
 
@@ -713,7 +713,7 @@ git commit -m "feat: actions de notificaciones con zod en ids"
 
 ---
 
-### Task 5: Componentes — `NotificationsBell`, `NotificationCard`, `MarkAllReadButton`
+### Task 5: Componentes, `NotificationsBell`, `NotificationCard`, `MarkAllReadButton`
 
 **Files:**
 - Create: `components/growly/notifications-bell.tsx`
@@ -724,10 +724,10 @@ git commit -m "feat: actions de notificaciones con zod en ids"
 **Interfaces:**
 - Consumes: Task 4 (actions), iconos lucide (`Bell`, `Receipt`, `CreditCard`, `TriangleAlert`).
 - Produces (Task 6 las consume):
-  - `NotificationsBell({ unread: number })` — Link a `/notificaciones`, badge rojo con el número (oculto si 0; `99+` si >99), `aria-label` con el count.
+  - `NotificationsBell({ unread: number })`: Link a `/notificaciones`, badge rojo con el número (oculto si 0; `99+` si >99), `aria-label` con el count.
   - `type NotificationView = { id: string; type: AlertType-like; title: string; body: string; timeLabel: string; read: boolean }`
-  - `NotificationCard({ n: NotificationView })` — botón: icono tintado por tipo (WARN ámbar, resto rojo), título/cuerpo/tiempo, dot `bg-acc` si no leída, `opacity-60` + disabled si leída; click en no-leída llama `markNotificationRead(n.id)`; error visible.
-  - `MarkAllReadButton()` — llama `markAllNotificationsRead`, error visible.
+  - `NotificationCard({ n: NotificationView })`: botón: icono tintado por tipo (WARN ámbar, resto rojo), título/cuerpo/tiempo, dot `bg-acc` si no leída, `opacity-60` + disabled si leída; click en no-leída llama `markNotificationRead(n.id)`; error visible.
+  - `MarkAllReadButton()`: llama `markAllNotificationsRead`, error visible.
 
 - [ ] **Step 1: Escribir los tests**
 
@@ -817,7 +817,7 @@ describe('MarkAllReadButton', () => {
 - [ ] **Step 2: Verificar que fallan**
 
 Run: `npx vitest run tests/notification-components.test.tsx`
-Expected: FAIL — módulos inexistentes.
+Expected: FAIL, módulos inexistentes.
 
 - [ ] **Step 3: Implementar**
 
@@ -1096,7 +1096,7 @@ describe.skipIf(!process.env.DATABASE_URL)('getDashboardData · alertas', () => 
 ```
 
 Run: `npx vitest run tests/notificaciones-page.test.tsx tests/dashboard.test.ts`
-Expected: FAIL — página inexistente; el dashboard aún no persiste alertas.
+Expected: FAIL, página inexistente; el dashboard aún no persiste alertas.
 
 - [ ] **Step 2: Implementar**
 
@@ -1240,7 +1240,7 @@ import { alertCandidates } from '@/lib/alerts'
 import { persistAlertCandidates } from '@/lib/notifications'
 ```
 
-- Después del bloque que calcula `budget` (y antes de `cashflow`/`deltas`), añadir — usa `progress`, `txns` y `accounts` ya cargados (cero queries extra de lectura):
+- Después del bloque que calcula `budget` (y antes de `cashflow`/`deltas`), añadir: usa `progress`, `txns` y `accounts` ya cargados (cero queries extra de lectura):
 
 ```ts
   // Alertas: evaluación perezosa con los datos ya cargados (spec F3 §5.2)
@@ -1281,7 +1281,7 @@ git commit -m "feat: centro /notificaciones, campana con badge y alertas al carg
 
 ---
 
-### Task 7: e2e — alerta de presupuesto de punta a punta
+### Task 7: e2e, alerta de presupuesto de punta a punta
 
 **Files:**
 - Test: `tests/e2e/notificaciones.spec.ts`
@@ -1356,7 +1356,7 @@ test('alerta de presupuesto: 86% → campana → centro → marcar leída', asyn
 - [ ] **Step 2: Ejecutarlo y verificar que pasa**
 
 Run: `npx playwright test tests/e2e/notificaciones.spec.ts`
-Expected: PASS. (Cold-start conocido: re-ejecutar una vez en caliente antes de tocar nada; `--trace on` solo si falla en caliente. NO debilitar aserciones; si la actualización del badge tras la action requiere esperar la revalidación, usa los auto-reintentos de `expect` — no `waitForTimeout`.)
+Expected: PASS. (Cold-start conocido: re-ejecutar una vez en caliente antes de tocar nada; `--trace on` solo si falla en caliente. NO debilitar aserciones; si la actualización del badge tras la action requiere esperar la revalidación, usa los auto-reintentos de `expect`, no `waitForTimeout`.)
 
 - [ ] **Step 3: Suite completa**
 
@@ -1379,7 +1379,7 @@ git commit -m "test: e2e de notificaciones — alerta de presupuesto, campana y 
 
 - §4 modelo `Notification` + enum + unique `[userId, dedupeKey]` + index → Task 1 (verbatim de la spec).
 - §5.1 reglas y claves: WARN/OVER con umbrales exactos y clave mensual (`monthParam`); PAYMENT_DUE ≤3 días con singular/plural y PAYMENT_OVERDUE por instante; CARD_DUE con `nextCardDueDate` (ajuste fin de mes, ≤5 días, `used > 0`) y clave del mes del vencimiento; copys congelados → Task 2. `relativeTimeLabel` → Task 2 (corrección documentada: createdAt es instante → getters locales).
-- §5.2 `evaluateAlertsForUser` (carga + `alertCandidates` + createMany skipDuplicates, sin escribir si no hay candidatas), lecturas/mutaciones scoped, actions con `idSchema` y revalidate de `/notificaciones` + `/` → Tasks 3-4. Triggers: dashboard vía `persistAlertCandidates` con datos ya cargados (cero queries extra — refinamiento del spec, documentado), `/notificaciones` vía evaluación autónoma → Task 6.
+- §5.2 `evaluateAlertsForUser` (carga + `alertCandidates` + createMany skipDuplicates, sin escribir si no hay candidatas), lecturas/mutaciones scoped, actions con `idSchema` y revalidate de `/notificaciones` + `/` → Tasks 3-4. Triggers: dashboard vía `persistAlertCandidates` con datos ya cargados (cero queries extra, refinamiento del spec, documentado), `/notificaciones` vía evaluación autónoma → Task 6.
 - §5.3 campana como Link con badge numérico (oculto en 0, `99+`), count desde el layout; página con chips "Todas | No leídas · N" (`?f=noleidas`), botón "Marcar todas" (visible con no-leídas), tarjetas del diseño (tinte por tipo, dot, opacidad, click marca leída, error visible), estados vacíos, fuera de NAV_ITEMS → Tasks 5-6.
 - §7 testing D2: umbrales exactos (84/85/100/101; 3/4 días; vencido; tarjeta 5/6 días, used 0, ajuste 31→30), claves estables, `relativeTimeLabel`, idempotencia (2ª llamada sin filas; WARN→OVER sin duplicar), unreadCount/markRead ownership/markAll, componentes RTL, página RTL con reloj fijado, dashboard DB test de trigger, e2e completo del flujo de la campana → Tasks 2-7.
 - §8: rama `feature/fase-3-d2`, migración `notifications`, review final de rama antes del merge. Al mergear: **Fase 3 completa**.

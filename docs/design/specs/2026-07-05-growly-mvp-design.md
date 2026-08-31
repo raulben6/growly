@@ -1,4 +1,4 @@
-# Growly — Spec de Diseño del MVP (Núcleo Financiero)
+# Growly: Spec de Diseño del MVP (Núcleo Financiero)
 
 - **Fecha:** 2026-07-05
 - **Estado:** Aprobado

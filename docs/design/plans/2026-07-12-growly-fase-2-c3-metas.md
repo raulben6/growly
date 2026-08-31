@@ -1,10 +1,10 @@
-# Growly Fase 2 · C3 — Metas · Implementation Plan
+# Growly Fase 2 · C3: Metas · Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Metas de ahorro tipo "sobres virtuales": objetivos con emoji/color/fecha, aportes manuales que NO tocan cuentas ni movimientos, página `/metas` (hero, tarjetas con progreso, aportar/ver aportes/editar/archivar) y card "Metas de ahorro" en el dashboard.
 
-**Architecture:** `lib/goals.ts` separa lo puro (`goalProgress`, `goalTotals`, `goalDateLabel`) del acceso a datos (`getGoalsForUser` con include de aportes + CRUD scoped por `userId`). `lib/goal-actions.ts` expone server actions con `auth()` + Zod (ids incluidos) + ownership. La página y el dashboard consumen `getGoalsForUser`; los aportes son un contador aparte — jamás crean `Transaction` ni afectan saldos.
+**Architecture:** `lib/goals.ts` separa lo puro (`goalProgress`, `goalTotals`, `goalDateLabel`) del acceso a datos (`getGoalsForUser` con include de aportes + CRUD scoped por `userId`). `lib/goal-actions.ts` expone server actions con `auth()` + Zod (ids incluidos) + ownership. La página y el dashboard consumen `getGoalsForUser`; los aportes son un contador aparte, jamás crean `Transaction` ni afectan saldos.
 
 **Tech Stack:** Next.js 16 App Router (Server Components + Server Actions), Prisma 6.19.3 + Neon PostgreSQL, Zod 4, shadcn/ui sobre Base UI, Vitest + RTL, Playwright.
 
@@ -17,15 +17,15 @@
 - **Dinero:** siempre centavos `Int`. Nunca Float. Formateo con `formatMoney`/`<Money>` existentes.
 - **Sobres virtuales (spec §2):** los aportes NO crean `Transaction`, NO tocan cuentas ni saldos. Retirar = borrar el aporte. Cualquier task que importe `lib/transactions` o `lib/balances` para aportes está mal.
 - **Multi-tenant:** todo acceso a datos scoped por `userId` de `auth()`. Jamás un `userId` del cliente. Mutaciones sobre recursos existentes con `updateMany`/`deleteMany` + `where: { id, userId }`. `GoalContribution.userId` existe para scoping directo.
-- **Ids y payloads de actions SIEMPRE por Zod** (`idSchema` ya existe en `lib/validators.ts`) — patrón C2, no copiar el patrón viejo de C1.
+- **Ids y payloads de actions SIEMPRE por Zod** (`idSchema` ya existe en `lib/validators.ts`): patrón C2, no copiar el patrón viejo de C1.
 - **Mensajes de validación en español** en todo campo alcanzable desde la UI (lección del review C2: nada de "Too small" en inglés).
 - **Fechas:** `targetDate` y `date` de aportes llegan de inputs `type=date` → `z.coerce.date()` → medianoche UTC. Para MOSTRAR esas fechas usar getters **UTC** (`getUTCMonth`/`getUTCFullYear`, o `formatShortDateUTC` de `lib/recurrence`). Para "este mes" de aportes usar getters **locales** (consistente con dashboard/presupuesto; unificación UTC = backlog pre-C4).
-- **Tests con fecha:** fijar el reloj con `vi.useFakeTimers({ toFake: ['Date'] })` + `vi.setSystemTime(...)` en tests de componentes/página que dependan de "hoy" (lección C2). Solo `Date` — no fakear timers (rompe RTL/userEvent).
+- **Tests con fecha:** fijar el reloj con `vi.useFakeTimers({ toFake: ['Date'] })` + `vi.setSystemTime(...)` en tests de componentes/página que dependan de "hoy" (lección C2). Solo `Date`, no fakear timers (rompe RTL/userEvent).
 - **UI en español**, tokens del design system (`bg-card`, `text-muted-foreground`, `bg-forest`, `text-acc`, `text-destructive`, `shadow-[var(--shadow-card)]`, radios `rounded-[11px]`/`rounded-[20px]`/`rounded-[22px]`).
-- **Botones de solo-icono llevan `aria-label`** (además de `title` si se quiere tooltip) — item de backlog C2 aplicado a lo nuevo.
-- **Diálogos:** shadcn sobre **Base UI** — `DialogTrigger` usa la prop `render={<elemento/>}` (NO children), `Dialog` controlado `open`/`onOpenChange`, ids de inputs con `React.useId()`, y al ABRIR se resincroniza el estado local con `initial` (lección C1). Patrón: `components/growly/budget-dialog.tsx`.
+- **Botones de solo-icono llevan `aria-label`** (además de `title` si se quiere tooltip): item de backlog C2 aplicado a lo nuevo.
+- **Diálogos:** shadcn sobre **Base UI**, `DialogTrigger` usa la prop `render={<elemento/>}` (NO children), `Dialog` controlado `open`/`onOpenChange`, ids de inputs con `React.useId()`, y al ABRIR se resincroniza el estado local con `initial` (lección C1). Patrón: `components/growly/budget-dialog.tsx`.
 - **Next.js 16:** `searchParams`/`params` son `Promise`. Ante dudas de API, leer `node_modules/next/dist/docs/` (ver `AGENTS.md`).
-- **Prisma pinned a 6.19.3** — no actualizar dependencias. Import de `prisma` al TOPE del archivo (nit del review C2 en budgets.ts — no repetirlo).
+- **Prisma pinned a 6.19.3**: no actualizar dependencias. Import de `prisma` al TOPE del archivo (nit del review C2 en budgets.ts, no repetirlo).
 - **`.env` es local y gitignored** (DATABASE_URL de Neon + AUTH_SECRET). NO modificarlo, NO imprimirlo, NO commitearlo.
 - **Tests de DB:** patrón `describe.skipIf(!process.env.DATABASE_URL)`, email único por archivo, cleanup en `afterAll` scoped a los usuarios del test. Si un test de DB falla SOLO por timeout (latencia Neon), reintentar con `--testTimeout=20000` y anotarlo.
 - **Comandos** (Windows PowerShell): `npx vitest run <archivo>` unit, `npx playwright test <archivo>` e2e, `npx prisma migrate dev --name <nombre>` migraciones.
@@ -33,7 +33,7 @@
 
 ---
 
-### Task 1: Schema Prisma — `Goal` + `GoalContribution` + migración
+### Task 1: Schema Prisma, `Goal` + `GoalContribution` + migración
 
 **Files:**
 - Modify: `prisma/schema.prisma`
@@ -62,7 +62,7 @@ describe.skipIf(!process.env.DATABASE_URL)('schema Goal + GoalContribution', () 
 - [ ] **Step 2: Verificar que falla**
 
 Run: `npx vitest run tests/goal-schema.test.ts`
-Expected: FAIL — `prisma.goal` es `undefined` (TypeError) o error de tipo.
+Expected: FAIL, `prisma.goal` es `undefined` (TypeError) o error de tipo.
 
 - [ ] **Step 3: Añadir el schema**
 
@@ -131,7 +131,7 @@ git commit -m "feat: modelos Goal y GoalContribution (sobres virtuales)"
 
 ---
 
-### Task 2: `lib/goals.ts` puro — `goalProgress` + `goalTotals` + `goalDateLabel`
+### Task 2: `lib/goals.ts` puro, `goalProgress` + `goalTotals` + `goalDateLabel`
 
 **Files:**
 - Create: `lib/goals.ts`
@@ -140,10 +140,10 @@ git commit -m "feat: modelos Goal y GoalContribution (sobres virtuales)"
 **Interfaces:**
 - Consumes: nada (puro).
 - Produces (Tasks 6-8 dependen de estos nombres exactos):
-  - `goalProgress(goal: { targetAmount: number }, saved: number): { pct: number; barPct: number; completed: boolean }` — `pct` real redondeado (puede superar 100), `barPct` = cap 100, `completed` = `saved >= targetAmount` (con target > 0).
+  - `goalProgress(goal: { targetAmount: number }, saved: number): { pct: number; barPct: number; completed: boolean }`: `pct` real redondeado (puede superar 100), `barPct` = cap 100, `completed` = `saved >= targetAmount` (con target > 0).
   - `type ContributionLike = { amount: number; date: Date }`
-  - `goalTotals(contributions: ContributionLike[], now: Date): { saved: number; savedThisMonth: number }` — mes con getters locales.
-  - `goalDateLabel(targetDate: Date | null): string` — `'Meta · dic 2026'` (getters UTC) o `'Meta · sin fecha'`.
+  - `goalTotals(contributions: ContributionLike[], now: Date): { saved: number; savedThisMonth: number }`: mes con getters locales.
+  - `goalDateLabel(targetDate: Date | null): string`: `'Meta · dic 2026'` (getters UTC) o `'Meta · sin fecha'`.
 
 - [ ] **Step 1: Escribir los tests**
 
@@ -206,7 +206,7 @@ describe('goalDateLabel', () => {
 - [ ] **Step 2: Verificar que fallan**
 
 Run: `npx vitest run tests/goals.test.ts`
-Expected: FAIL — `Cannot find module '@/lib/goals'`.
+Expected: FAIL, `Cannot find module '@/lib/goals'`.
 
 - [ ] **Step 3: Implementar**
 
@@ -267,10 +267,10 @@ git commit -m "feat: goalProgress, goalTotals y goalDateLabel puros"
 
 ---
 
-### Task 3: `lib/goals.ts` DB — `getGoalsForUser` + CRUD + aportes
+### Task 3: `lib/goals.ts` DB, `getGoalsForUser` + CRUD + aportes
 
 **Files:**
-- Modify: `lib/goals.ts` (import de prisma al TOPE del archivo; funciones DB al final — lo puro de Task 2 no se toca)
+- Modify: `lib/goals.ts` (import de prisma al TOPE del archivo; funciones DB al final, lo puro de Task 2 no se toca)
 - Test: `tests/goals-db.test.ts`
 
 **Interfaces:**
@@ -281,7 +281,7 @@ git commit -m "feat: goalProgress, goalTotals y goalDateLabel puros"
   - `createGoalForUser(userId, data: GoalData)`
   - `updateGoalForUser(userId, id, data: GoalData): Promise<{ ok: boolean }>` (updateMany; `emoji`/`targetDate` undefined → null para poder limpiarlos)
   - `archiveGoalForUser(userId, id): Promise<{ ok: boolean }>`
-  - `addContributionForUser(userId, { goalId, amount, date?, note? }): Promise<{ ok: boolean }>` — verifica que la meta es del usuario ANTES de crear.
+  - `addContributionForUser(userId, { goalId, amount, date?, note? }): Promise<{ ok: boolean }>`: verifica que la meta es del usuario ANTES de crear.
   - `deleteContributionForUser(userId, id): Promise<{ ok: boolean }>`
 
 Nota de diseño (desviación deliberada del hint `_sum` de la spec §7.1): la página necesita la lista de aportes de cada meta para "ver aportes", así que `getGoalsForUser` hace UNA query con `include` y suma en JS vía `goalTotals` (puro, ya testeado) en lugar de dos `groupBy` extra. Mismo resultado, menos round-trips a Neon.
@@ -378,7 +378,7 @@ describe.skipIf(!process.env.DATABASE_URL)('goals DB', () => {
 - [ ] **Step 2: Verificar que fallan**
 
 Run: `npx vitest run tests/goals-db.test.ts`
-Expected: FAIL — los exports DB no existen.
+Expected: FAIL, los exports DB no existen.
 
 - [ ] **Step 3: Implementar**
 
@@ -566,7 +566,7 @@ describe.skipIf(!process.env.DATABASE_URL)('goal actions', () => {
 - [ ] **Step 2: Verificar que fallan**
 
 Run: `npx vitest run tests/goal-actions.test.ts`
-Expected: FAIL — `Cannot find module '@/lib/goal-actions'`.
+Expected: FAIL, `Cannot find module '@/lib/goal-actions'`.
 
 - [ ] **Step 3: Implementar**
 
@@ -708,7 +708,7 @@ git commit -m "feat: goalSchema/contributionSchema + actions de metas y aportes 
 
 ---
 
-### Task 5: Diálogos — `GoalDialog`, `ContributionDialog`, `ContributionsListDialog`
+### Task 5: Diálogos, `GoalDialog`, `ContributionDialog`, `ContributionsListDialog`
 
 **Files:**
 - Create: `components/growly/goal-dialog.tsx`
@@ -719,8 +719,8 @@ git commit -m "feat: goalSchema/contributionSchema + actions de metas y aportes 
 **Interfaces:**
 - Consumes: actions de Task 4, `parseAmountToCents`, `Dialog`/`Button`/`Input`/`Label` de `components/ui`, `<Money>`.
 - Produces (Tasks 6-7 dependen de estas props exactas):
-  - `GoalDialog({ goalId?: string; initial?: GoalFormInitial; trigger?: React.ReactElement })` con `type GoalFormInitial = { name: string; emoji: string; colorHex: string; targetAmountStr: string; targetDate: string }` — sin `goalId` = crear (trigger default: tarjeta punteada "Nueva meta"); con `goalId` = editar.
-  - `ContributionDialog({ goalId: string; goalName: string; trigger?: React.ReactElement })` — trigger default: botón "+ Aportar".
+  - `GoalDialog({ goalId?: string; initial?: GoalFormInitial; trigger?: React.ReactElement })` con `type GoalFormInitial = { name: string; emoji: string; colorHex: string; targetAmountStr: string; targetDate: string }`: sin `goalId` = crear (trigger default: tarjeta punteada "Nueva meta"); con `goalId` = editar.
+  - `ContributionDialog({ goalId: string; goalName: string; trigger?: React.ReactElement })`: trigger default: botón "+ Aportar".
   - `ContributionsListDialog({ goalName: string; contributions: ContributionView[]; trigger: React.ReactElement })` con `type ContributionView = { id: string; amount: number; dateLabel: string; note: string | null }`.
 
 - [ ] **Step 1: Escribir los tests**
@@ -855,7 +855,7 @@ describe('ContributionsListDialog', () => {
 - [ ] **Step 2: Verificar que fallan**
 
 Run: `npx vitest run tests/goal-dialogs.test.tsx`
-Expected: FAIL — módulos de componentes inexistentes.
+Expected: FAIL, módulos de componentes inexistentes.
 
 - [ ] **Step 3: Implementar los tres diálogos**
 
@@ -1323,7 +1323,7 @@ describe('GoalCard', () => {
 - [ ] **Step 2: Verificar que fallan**
 
 Run: `npx vitest run tests/goal-components.test.tsx`
-Expected: FAIL — módulos inexistentes.
+Expected: FAIL, módulos inexistentes.
 
 - [ ] **Step 3: Implementar**
 
@@ -1499,7 +1499,7 @@ git commit -m "feat: GoalsHero y GoalCard con progreso, completada y acciones"
 ### Task 7: Página `/metas`
 
 **Files:**
-- Modify: `app/(app)/metas/page.tsx` (hoy es un placeholder `ComingSoon` — se reemplaza entero)
+- Modify: `app/(app)/metas/page.tsx` (hoy es un placeholder `ComingSoon`, se reemplaza entero)
 - Test: `tests/metas-page.test.tsx`
 
 **Interfaces:**
@@ -1574,7 +1574,7 @@ describe('página /metas', () => {
 - [ ] **Step 2: Verificar que fallan**
 
 Run: `npx vitest run tests/metas-page.test.tsx`
-Expected: FAIL — la página actual renderiza `ComingSoon`.
+Expected: FAIL, la página actual renderiza `ComingSoon`.
 
 - [ ] **Step 3: Implementar la página**
 
@@ -1673,7 +1673,7 @@ git commit -m "feat: página /metas con hero, tarjetas de meta y alta"
 
 ---
 
-### Task 8: Dashboard — `GoalsCard` + `getDashboardData` + recolocación del grid
+### Task 8: Dashboard, `GoalsCard` + `getDashboardData` + recolocación del grid
 
 **Files:**
 - Create: `components/growly/goals-card.tsx`
@@ -1686,7 +1686,7 @@ git commit -m "feat: página /metas con hero, tarjetas de meta y alta"
 - Consumes: `getGoalsForUser` + `goalProgress` (Tasks 2-3), `BudgetCard`/`CategoryDonut` existentes.
 - Produces:
   - `type GoalsSummaryItem = { id: string; name: string; emoji: string | null; colorHex: string; pct: number; barPct: number }` en `goals-card.tsx`.
-  - `GoalsCard({ goals: GoalsSummaryItem[] })` — hasta 3 metas; vacío → link a `/metas`.
+  - `GoalsCard({ goals: GoalsSummaryItem[] })`: hasta 3 metas; vacío → link a `/metas`.
   - `getDashboardData` devuelve además `goals: GoalsSummaryItem[]` (top 3 por orden de `getGoalsForUser`).
   - Layout del dashboard (spec §9): fila 2 = `md:grid-cols-3` **BudgetCard | Próximos pagos | GoalsCard**; fila 3 nueva = `md:grid-cols-2` **CategoryDonut | Movimientos recientes**.
 
@@ -1731,7 +1731,7 @@ describe('GoalsCard', () => {
 - [ ] **Step 2: Verificar que fallan e implementar `GoalsCard`**
 
 Run: `npx vitest run tests/goals-card.test.tsx`
-Expected: FAIL — `Cannot find module '@/components/growly/goals-card'`.
+Expected: FAIL, `Cannot find module '@/components/growly/goals-card'`.
 
 Crear `components/growly/goals-card.tsx`:
 
@@ -1792,7 +1792,7 @@ Expected: PASS (3 tests).
 
 - [ ] **Step 3: Ampliar `getDashboardData` con test**
 
-1. Añadir al FINAL de `tests/dashboard.test.ts` (comprobar imports existentes; `getDashboardData`, `prisma` y los globals de vitest ya están importados por el describe de budget de C2 — no duplicar):
+1. Añadir al FINAL de `tests/dashboard.test.ts` (comprobar imports existentes; `getDashboardData`, `prisma` y los globals de vitest ya están importados por el describe de budget de C2: no duplicar):
 
 ```ts
 describe.skipIf(!process.env.DATABASE_URL)('getDashboardData · goals', () => {
@@ -1833,7 +1833,7 @@ describe.skipIf(!process.env.DATABASE_URL)('getDashboardData · goals', () => {
 ```
 
 Run: `npx vitest run tests/dashboard.test.ts`
-Expected: FAIL — `d.goals` es `undefined`.
+Expected: FAIL, `d.goals` es `undefined`.
 
 2. En `lib/dashboard.ts`:
 
@@ -1896,9 +1896,9 @@ import { GoalsCard } from '@/components/growly/goals-card'
         <GoalsCard goals={d.goals} />
 ```
 
-(la fila queda: `<BudgetCard summary={d.budget} />`, card "Próximos pagos" sin cambios, `<GoalsCard goals={d.goals} />` — diseño web §9: Presupuesto | Próximos pagos | Metas de ahorro).
+(la fila queda: `<BudgetCard summary={d.budget} />`, card "Próximos pagos" sin cambios, `<GoalsCard goals={d.goals} />`, diseño web §9: Presupuesto | Próximos pagos | Metas de ahorro).
 
-3. ENVOLVER la card "Movimientos recientes" existente en una nueva fila de dos columnas junto al donut — el contenido interno de "Movimientos recientes" queda byte-idéntico, solo se mueve dentro del nuevo grid:
+3. ENVOLVER la card "Movimientos recientes" existente en una nueva fila de dos columnas junto al donut: el contenido interno de "Movimientos recientes" queda byte-idéntico, solo se mueve dentro del nuevo grid:
 
 ```tsx
       <div className="grid gap-4 md:grid-cols-2">
@@ -1925,7 +1925,7 @@ git commit -m "feat: card Metas de ahorro en el dashboard y fila donut + recient
 
 ---
 
-### Task 9: e2e — crear meta, aportar y ver el progreso
+### Task 9: e2e, crear meta, aportar y ver el progreso
 
 **Files:**
 - Test: `tests/e2e/metas.spec.ts`
@@ -1983,7 +1983,7 @@ test('metas: crear meta, aportar y ver el progreso', async ({ page }) => {
 - [ ] **Step 2: Ejecutarlo y verificar que pasa**
 
 Run: `npx playwright test tests/e2e/metas.spec.ts`
-Expected: PASS. (Si falla por cold-start del dev server — patrón conocido: Fast Refresh interrumpe el primer flujo —, re-ejecutar una vez con el server ya caliente antes de tocar nada. Depurar con `--trace on` solo si falla en caliente; NO debilitar aserciones.)
+Expected: PASS. (Si falla por cold-start del dev server, patrón conocido: Fast Refresh interrumpe el primer flujo, re-ejecutar una vez con el server ya caliente antes de tocar nada. Depurar con `--trace on` solo si falla en caliente; NO debilitar aserciones.)
 
 - [ ] **Step 3: Suite completa**
 

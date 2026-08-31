@@ -1,4 +1,4 @@
-# Growly Fase 3 · D1 — Reportes · Implementation Plan
+# Growly Fase 3 · D1: Reportes · Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -8,7 +8,7 @@
 
 **Tech Stack:** Next.js 16 App Router (Server Components), Vitest + RTL, Playwright. Sin librerías de charts.
 
-**Spec:** `docs/superpowers/specs/2026-07-14-growly-fase-3-design.md` (secciones 2, 3, 6, 7, 8 — sub-plan D1).
+**Spec:** `docs/superpowers/specs/2026-07-14-growly-fase-3-design.md` (secciones 2, 3, 6, 7, 8, sub-plan D1).
 
 **Rama:** `feature/fase-3-d1` desde `master`. Merge a `master` tras el review final de rama (patrón C1-C4).
 
@@ -16,19 +16,19 @@
 
 - **Convención de fechas unificada (C4):** fechas de datos = fecha-calendario a medianoche UTC → getters UTC (`getUTCFullYear`/`getUTCMonth`); "mes actual" y "días transcurridos" desde componentes LOCALES de `now`. Ninguna función nueva usa getters locales sobre fechas de datos.
 - **Dinero:** centavos `Int`; formateo con `formatMoney`/`<Money>`. Serie y KPIs solo cuentan **CLEARED** (consistente con los KPIs existentes); TRANSFER no es ingreso ni gasto.
-- **Charts SVG/CSS propio** — cero dependencias, render en servidor, tokens del design system (`bg-acc`, `bg-destructive`, `var(--line)`) sobre superficies claras; hex fijos solo en superficies forest (aquí no hay).
+- **Charts SVG/CSS propio**: cero dependencias, render en servidor, tokens del design system (`bg-acc`, `bg-destructive`, `var(--line)`) sobre superficies claras; hex fijos solo en superficies forest (aquí no hay).
 - **Deltas:** verde cuando la dirección es buena (ingresos ↑, gastos/gasto medio ↓, tasa de ahorro ↑); rojo en caso contrario; sin delta (null) cuando el mes anterior no tiene datos comparables.
 - **Multi-tenant:** `userId` solo de `auth()`; sin sesión → `redirect('/login')`.
 - **Next.js 16:** `searchParams` es `Promise` (await). Reutilizar helpers existentes: `prevMonth`/`YearMonth` de `lib/month-param`, `daysInMonth`/`shortMonthName` de `lib/calendar`.
 - **UI en español**, tokens y radios de la casa (`rounded-[11px]`/`[18px]`/`[20px]`/`[22px]`, `shadow-[var(--shadow-card)]`); tabs como las de /movimientos (`bg-forest text-white` activa).
 - **Tests con fecha:** reloj fijado `vi.useFakeTimers({ toFake: ['Date'] })` donde "hoy" importe. Tests de datos con fechas `Date.UTC` (portables entre offsets).
-- **Prisma pinned 6.19.3**; `.env` local/gitignored — no tocar. Lint baseline conocido: 1 error pre-existente en `components/growly/category-donut.tsx`.
+- **Prisma pinned 6.19.3**; `.env` local/gitignored: no tocar. Lint baseline conocido: 1 error pre-existente en `components/growly/category-donut.tsx`.
 - **Tests de DB:** `describe.skipIf(!process.env.DATABASE_URL)`; timeouts Neon → `--testTimeout=20000` y anotarlo.
 - Commits `feat:`/`test:`/`fix:` en español.
 
 ---
 
-### Task 1: `lib/reports.ts` puro — serie mensual, KPIs, rango de categorías y polyline
+### Task 1: `lib/reports.ts` puro, serie mensual, KPIs, rango de categorías y polyline
 
 **Files:**
 - Create: `lib/reports.ts`
@@ -39,12 +39,12 @@
 - Produces (Tasks 2-4 dependen de estos nombres exactos):
   - `type ReportTx = { type: 'INCOME' | 'EXPENSE' | 'TRANSFER'; amount: number; date: Date; status?: 'CLEARED' | 'PENDING'; categoryId?: string | null }`
   - `type MonthPoint = { year: number; month: number; income: number; expense: number }`
-  - `monthlySeries(txns: ReportTx[], now: Date, months: number): MonthPoint[]` — últimos `months` meses terminando en el actual, orden cronológico, meses vacíos en 0.
-  - `reportKpis(series: MonthPoint[], now: Date): { savingsRate: number; savingsRateDelta: number | null; avgDailyExpense: number; avgDailyExpenseDelta: number | null }` — tasa del mes actual (income>0 ? round((inc−exp)/inc·100) : 0) y delta en puntos; gasto medio/día actual = expense/`now.getDate()`, el del mes anterior usa sus días totales; deltas null si el mes anterior está vacío (income y expense 0).
-  - `kpiDeltas(series: MonthPoint[]): { incomePct: number | null; expensePct: number | null }` — variación % vs mes anterior; null si el valor previo es 0.
+  - `monthlySeries(txns: ReportTx[], now: Date, months: number): MonthPoint[]`: últimos `months` meses terminando en el actual, orden cronológico, meses vacíos en 0.
+  - `reportKpis(series: MonthPoint[], now: Date): { savingsRate: number; savingsRateDelta: number | null; avgDailyExpense: number; avgDailyExpenseDelta: number | null }`: tasa del mes actual (income>0 ? round((inc−exp)/inc·100): 0) y delta en puntos; gasto medio/día actual = expense/`now.getDate()`, el del mes anterior usa sus días totales; deltas null si el mes anterior está vacío (income y expense 0).
+  - `kpiDeltas(series: MonthPoint[]): { incomePct: number | null; expensePct: number | null }`: variación % vs mes anterior; null si el valor previo es 0.
   - `type RangeCategoryTotal = { id: string; name: string; colorHex: string; total: number }`
-  - `categoryTotalsForRange(txns, categories, fromYm: YearMonth, toYm: YearMonth): RangeCategoryTotal[]` — EXPENSE CLEARED del rango inclusive, orden desc, `'Otros'`/`#8A857E` para sin categoría.
-  - `linePoints(values: number[], width: number, height: number, max: number): string` — `"x,y x,y …"` con margen superior del 10% (y crece hacia abajo); `''` si no hay valores o max ≤ 0.
+  - `categoryTotalsForRange(txns, categories, fromYm: YearMonth, toYm: YearMonth): RangeCategoryTotal[]`: EXPENSE CLEARED del rango inclusive, orden desc, `'Otros'`/`#8A857E` para sin categoría.
+  - `linePoints(values: number[], width: number, height: number, max: number): string`: `"x,y x,y …"` con margen superior del 10% (y crece hacia abajo); `''` si no hay valores o max ≤ 0.
 
 - [ ] **Step 1: Escribir los tests**
 
@@ -178,7 +178,7 @@ describe('linePoints', () => {
 - [ ] **Step 2: Verificar que fallan**
 
 Run: `npx vitest run tests/reports.test.ts`
-Expected: FAIL — `Cannot find module '@/lib/reports'`.
+Expected: FAIL, `Cannot find module '@/lib/reports'`.
 
 - [ ] **Step 3: Implementar**
 
@@ -309,7 +309,7 @@ git commit -m "feat: lib/reports puro — serie mensual, KPIs con deltas, rango 
 
 ---
 
-### Task 2: Componentes — `BarsChart`, `CashflowChart`, `ReportStat`, `CategoryBars` + delta en `KpiCard`
+### Task 2: Componentes, `BarsChart`, `CashflowChart`, `ReportStat`, `CategoryBars` + delta en `KpiCard`
 
 **Files:**
 - Create: `components/growly/bars-chart.tsx`
@@ -322,11 +322,11 @@ git commit -m "feat: lib/reports puro — serie mensual, KPIs con deltas, rango 
 **Interfaces:**
 - Consumes: `MonthPoint`/`RangeCategoryTotal`/`linePoints` (Task 1), `shortMonthName` de `@/lib/calendar`, `<Money>`.
 - Produces (Tasks 3-4 dependen de estas props exactas):
-  - `BarsChart({ series: MonthPoint[] })` — barras agrupadas, altura % del máximo de la serie, mes actual (último) en negrita.
-  - `CashflowChart({ series: MonthPoint[] })` — SVG 640×200: línea ingresos sólida (`#10b981`, grosor 3) + área `rgba(16,185,129,.1)`, línea gastos punteada (`#c9584f`, `2 5`), 3 gridlines, meses abajo.
+  - `BarsChart({ series: MonthPoint[] })`: barras agrupadas, altura % del máximo de la serie, mes actual (último) en negrita.
+  - `CashflowChart({ series: MonthPoint[] })`: SVG 640×200: línea ingresos sólida (`#10b981`, grosor 3) + área `rgba(16,185,129,.1)`, línea gastos punteada (`#c9584f`, `2 5`), 3 gridlines, meses abajo.
   - `ReportStat({ label: string; value: string; delta: { text: string; good: boolean } | null })`
-  - `CategoryBars({ items: RangeCategoryTotal[] })` — barra proporcional al máximo, color de la categoría.
-  - `KpiCard` gana `delta?: { text: string; good: boolean } | null` — línea "▲ 8% vs jun" verde (`text-acc`) si good, roja (`text-destructive`) si no. La prop `subtitle` existente no cambia.
+  - `CategoryBars({ items: RangeCategoryTotal[] })`: barra proporcional al máximo, color de la categoría.
+  - `KpiCard` gana `delta?: { text: string; good: boolean } | null`: línea "▲ 8% vs jun" verde (`text-acc`) si good, roja (`text-destructive`) si no. La prop `subtitle` existente no cambia.
 
 - [ ] **Step 1: Escribir los tests**
 
@@ -418,7 +418,7 @@ describe('KpiCard · delta', () => {
 - [ ] **Step 2: Verificar que fallan**
 
 Run: `npx vitest run tests/report-components.test.tsx`
-Expected: FAIL — módulos inexistentes / prop `delta` inexistente.
+Expected: FAIL, módulos inexistentes / prop `delta` inexistente.
 
 - [ ] **Step 3: Implementar**
 
@@ -606,7 +606,7 @@ export function CategoryBars({ items }: { items: RangeCategoryTotal[] }) {
 }
 ```
 
-Modificar `components/growly/kpi-card.tsx` — reemplazar TODO el contenido por:
+Modificar `components/growly/kpi-card.tsx`: reemplazar TODO el contenido por:
 
 ```tsx
 import { Money } from '@/components/growly/money'
@@ -660,7 +660,7 @@ git commit -m "feat: charts SVG propios y delta en KpiCard"
 ### Task 3: Página `/reportes`
 
 **Files:**
-- Modify: `app/(app)/reportes/page.tsx` (hoy es un placeholder `ComingSoon` de 2 líneas — se reemplaza entero)
+- Modify: `app/(app)/reportes/page.tsx` (hoy es un placeholder `ComingSoon` de 2 líneas, se reemplaza entero)
 - Test: `tests/reportes-page.test.tsx`
 
 **Interfaces:**
@@ -741,7 +741,7 @@ Nota de cálculo del test 1: gasto medio/día jul = 90 000/12 = 7 500; jun = 189
 - [ ] **Step 2: Verificar que fallan**
 
 Run: `npx vitest run tests/reportes-page.test.tsx`
-Expected: FAIL — la página actual renderiza `ComingSoon`.
+Expected: FAIL, la página actual renderiza `ComingSoon`.
 
 - [ ] **Step 3: Implementar la página**
 
@@ -861,7 +861,7 @@ git commit -m "feat: página /reportes con toggle de periodo, KPIs con deltas y 
 
 ---
 
-### Task 4: Dashboard — `cashflow` + `deltas` en `getDashboardData` y recolocación del grid
+### Task 4: Dashboard, `cashflow` + `deltas` en `getDashboardData` y recolocación del grid
 
 **Files:**
 - Modify: `lib/dashboard.ts` (función `getDashboardData`)
@@ -875,7 +875,7 @@ git commit -m "feat: página /reportes con toggle de periodo, KPIs con deltas y 
 
 - [ ] **Step 1: Test del data layer (RED)**
 
-Añadir al FINAL de `tests/dashboard.test.ts` (imports ya presentes de los describes de C2/C3 — no duplicar):
+Añadir al FINAL de `tests/dashboard.test.ts` (imports ya presentes de los describes de C2/C3: no duplicar):
 
 ```ts
 describe.skipIf(!process.env.DATABASE_URL)('getDashboardData · cashflow y deltas', () => {
@@ -913,7 +913,7 @@ describe.skipIf(!process.env.DATABASE_URL)('getDashboardData · cashflow y delta
 ```
 
 Run: `npx vitest run tests/dashboard.test.ts`
-Expected: FAIL — `d.cashflow` es `undefined`.
+Expected: FAIL, `d.cashflow` es `undefined`.
 
 - [ ] **Step 2: Ampliar `getDashboardData` (GREEN)**
 
@@ -987,7 +987,7 @@ import { shortMonthName } from '@/lib/calendar'
       </div>
 ```
 
-5. En la fila de 2 columnas de C3 (`grid gap-4 md:grid-cols-2` con `<CategoryDonut …/>` y la card "Movimientos recientes"): quitar el `<CategoryDonut …/>` (ya vive en la fila nueva) y DESENVOLVER la card "Movimientos recientes" del grid — queda como hija directa a ancho completo, con su contenido interno byte-idéntico.
+5. En la fila de 2 columnas de C3 (`grid gap-4 md:grid-cols-2` con `<CategoryDonut …/>` y la card "Movimientos recientes"): quitar el `<CategoryDonut …/>` (ya vive en la fila nueva) y DESENVOLVER la card "Movimientos recientes" del grid, queda como hija directa a ancho completo, con su contenido interno byte-idéntico.
 
 Run: `npm run lint`
 Expected: sin errores nuevos sobre el baseline.
@@ -1004,7 +1004,7 @@ git commit -m "feat: flujo de caja y deltas de KPI en el dashboard"
 
 ---
 
-### Task 5: e2e — reportes con datos reales y flujo de caja en el dashboard
+### Task 5: e2e, reportes con datos reales y flujo de caja en el dashboard
 
 **Files:**
 - Test: `tests/e2e/reportes.spec.ts`

@@ -1,4 +1,4 @@
-# Growly Fase 2 · C2 — Presupuesto · Implementation Plan
+# Growly Fase 2 · C2: Presupuesto · Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -17,11 +17,11 @@
 - **Dinero:** siempre centavos `Int`. Nunca Float. Formateo con `formatMoney`/`<Money>`/`<SignedAmount>` existentes.
 - **Multi-tenant:** todo acceso a datos va scoped por `userId` obtenido de `auth()` en la action/página. Jamás un `userId` del cliente. Mutaciones sobre recursos existentes con `updateMany`/`deleteMany` + `where: { id, userId }`.
 - **Convención de meses:** en DB y código `month` es **0-11** (convención JS `Date`, igual que `lib/dashboard`). En el query param `?m=` es **1-12 humano** (`2026-07` = julio). La conversión vive SOLO en `lib/month-param.ts`.
-- **Convención de fechas del gasto (igual que Fase 1):** `spent` cuenta EXPENSE **CLEARED** del mes usando getters **locales** (`getFullYear`/`getMonth`), exactamente como `monthlyTotals` de `lib/dashboard.ts` — los KPIs y el presupuesto deben coincidir. (La unificación a UTC es un item de backlog previo a C4; NO lo hagas en C2.)
+- **Convención de fechas del gasto (igual que Fase 1):** `spent` cuenta EXPENSE **CLEARED** del mes usando getters **locales** (`getFullYear`/`getMonth`), exactamente como `monthlyTotals` de `lib/dashboard.ts`, los KPIs y el presupuesto deben coincidir. (La unificación a UTC es un item de backlog previo a C4; NO lo hagas en C2.)
 - **UI en español**, tokens del design system en `app/globals.css` (`bg-card`, `text-muted-foreground`, `bg-forest`, `text-destructive` = `#c9584f`, `text-warning` = `#e0ad2e`, `text-acc`, `shadow-[var(--shadow-card)]`, radios `rounded-[11px]`/`rounded-[20px]`/`rounded-[22px]`).
-- **Diálogos:** shadcn sobre **Base UI** — `DialogTrigger` usa la prop `render={<elemento/>}` (NO children), `Dialog` controlado con `open`/`onOpenChange`. Ids de inputs con `React.useId()` (puede haber varios diálogos montados en la misma página). Copiar el patrón de `components/growly/transaction-dialog.tsx` y `recurring-dialog.tsx`.
-- **Next.js 16:** `searchParams` es `Promise` y se hace `await`. Este repo usa una versión de Next con breaking changes — ante cualquier duda de API, leer `node_modules/next/dist/docs/` (ver `AGENTS.md`).
-- **Prisma pinned a 6.19.3** — no actualizar dependencias.
+- **Diálogos:** shadcn sobre **Base UI**, `DialogTrigger` usa la prop `render={<elemento/>}` (NO children), `Dialog` controlado con `open`/`onOpenChange`. Ids de inputs con `React.useId()` (puede haber varios diálogos montados en la misma página). Copiar el patrón de `components/growly/transaction-dialog.tsx` y `recurring-dialog.tsx`.
+- **Next.js 16:** `searchParams` es `Promise` y se hace `await`. Este repo usa una versión de Next con breaking changes, ante cualquier duda de API, leer `node_modules/next/dist/docs/` (ver `AGENTS.md`).
+- **Prisma pinned a 6.19.3**: no actualizar dependencias.
 - **`.env` es local y gitignored** (contiene `DATABASE_URL` de Neon y `AUTH_SECRET`). NO modificarlo, NO imprimirlo, NO commitearlo.
 - **Tests de DB:** patrón `describe.skipIf(!process.env.DATABASE_URL)`, email único por archivo (`` `algo_${Date.now()}@growly.app` ``), cleanup en `afterAll` scoped al usuario del test. `tests/setup.ts` ya carga dotenv y desconecta prisma.
 - **Comandos** (Windows PowerShell): `npx vitest run <archivo>` para unit, `npx playwright test <archivo>` para e2e (levanta `next dev` solo), `npx prisma migrate dev --name <nombre>` para migraciones.
@@ -29,7 +29,7 @@
 
 ---
 
-### Task 1: Schema Prisma — modelo `Budget` + migración
+### Task 1: Schema Prisma, modelo `Budget` + migración
 
 **Files:**
 - Modify: `prisma/schema.prisma`
@@ -58,7 +58,7 @@ describe.skipIf(!process.env.DATABASE_URL)('schema Budget', () => {
 - [ ] **Step 2: Verificar que falla**
 
 Run: `npx vitest run tests/budget-schema.test.ts`
-Expected: FAIL — `prisma.budget` es `undefined` (TypeError) o error de tipo.
+Expected: FAIL, `prisma.budget` es `undefined` (TypeError) o error de tipo.
 
 - [ ] **Step 3: Añadir el schema**
 
@@ -84,7 +84,7 @@ model Budget {
 }
 ```
 
-2. Relaciones inversas — añadir una línea en cada modelo:
+2. Relaciones inversas: añadir una línea en cada modelo:
    - `model User` (junto a `recurringRules`): `budgets Budget[]`
    - `model Category` (junto a `recurringRules`): `budgets Budget[]`
 
@@ -107,7 +107,7 @@ git commit -m "feat: modelo Budget con unique por usuario/categoría/mes"
 
 ---
 
-### Task 2: `lib/budgets.ts` puro — `budgetProgress` + `budgetForecast`
+### Task 2: `lib/budgets.ts` puro, `budgetProgress` + `budgetForecast`
 
 **Files:**
 - Create: `lib/budgets.ts`
@@ -120,7 +120,7 @@ git commit -m "feat: modelo Budget con unique por usuario/categoría/mes"
   - `type BudgetTx = { type: 'INCOME' | 'EXPENSE' | 'TRANSFER'; amount: number; date: Date; categoryId?: string | null; status?: 'CLEARED' | 'PENDING' }`
   - `type CategoryProgress = { budgetId: string; categoryId: string; limit: number; spent: number; pct: number; over: boolean }`
   - `type BudgetTotals = { limit: number; spent: number; pct: number; available: number }`
-  - `budgetProgress(budgets: BudgetLike[], txns: BudgetTx[], year: number, month: number): { categories: CategoryProgress[]; totals: BudgetTotals }` — categorías ordenadas por `pct` desc.
+  - `budgetProgress(budgets: BudgetLike[], txns: BudgetTx[], year: number, month: number): { categories: CategoryProgress[]; totals: BudgetTotals }`: categorías ordenadas por `pct` desc.
   - `budgetForecast(totals: { spent: number }, now: Date): { projected: number; daysLeft: number }`
 
 - [ ] **Step 1: Escribir los tests (fallan porque el módulo no existe)**
@@ -223,7 +223,7 @@ describe('budgetForecast', () => {
 - [ ] **Step 2: Verificar que fallan**
 
 Run: `npx vitest run tests/budgets.test.ts`
-Expected: FAIL — `Cannot find module '@/lib/budgets'` (o export inexistente).
+Expected: FAIL, `Cannot find module '@/lib/budgets'` (o export inexistente).
 
 - [ ] **Step 3: Implementar**
 
@@ -311,7 +311,7 @@ git commit -m "feat: budgetProgress y budgetForecast puros"
 
 ---
 
-### Task 3: `lib/month-param.ts` — mes 1-12 del URL ↔ 0-11 del código
+### Task 3: `lib/month-param.ts`, mes 1-12 del URL ↔ 0-11 del código
 
 **Files:**
 - Create: `lib/month-param.ts`
@@ -320,10 +320,10 @@ git commit -m "feat: budgetProgress y budgetForecast puros"
 **Interfaces:**
 - Consumes: nada (puro).
 - Produces (Tasks 6-7 dependen de estos nombres exactos; C4 lo reutilizará para `/calendario`):
-  - `type YearMonth = { year: number; month: number }` — `month` 0-11.
-  - `parseMonthParam(m: string | undefined, now: Date): YearMonth` — acepta `"2026-07"` (mes humano 1-12); inválido/ausente → mes de `now`.
-  - `monthParam(ym: YearMonth): string` — `{year: 2026, month: 6}` → `"2026-07"`.
-  - `monthLabel(ym: YearMonth): string` — `"Julio 2026"`.
+  - `type YearMonth = { year: number; month: number }`: `month` 0-11.
+  - `parseMonthParam(m: string | undefined, now: Date): YearMonth`: acepta `"2026-07"` (mes humano 1-12); inválido/ausente → mes de `now`.
+  - `monthParam(ym: YearMonth): string`: `{year: 2026, month: 6}` → `"2026-07"`.
+  - `monthLabel(ym: YearMonth): string`: `"Julio 2026"`.
   - `prevMonth(ym: YearMonth): YearMonth`, `nextMonth(ym: YearMonth): YearMonth`.
   - `isCurrentMonth(ym: YearMonth, now: Date): boolean`.
 
@@ -389,7 +389,7 @@ describe('isCurrentMonth', () => {
 - [ ] **Step 2: Verificar que fallan**
 
 Run: `npx vitest run tests/month-param.test.ts`
-Expected: FAIL — `Cannot find module '@/lib/month-param'`.
+Expected: FAIL, `Cannot find module '@/lib/month-param'`.
 
 - [ ] **Step 3: Implementar**
 
@@ -451,7 +451,7 @@ git commit -m "feat: helpers de mes para query param compartidos (presupuesto/ca
 
 ---
 
-### Task 4: `lib/budgets.ts` DB — `getBudgetsForMonth` (auto-copia) + upsert/delete
+### Task 4: `lib/budgets.ts` DB, `getBudgetsForMonth` (auto-copia) + upsert/delete
 
 **Files:**
 - Modify: `lib/budgets.ts` (añadir al final; lo puro de Task 2 no se toca)
@@ -554,8 +554,8 @@ describe.skipIf(!process.env.DATABASE_URL)('budgets DB', () => {
 - [ ] **Step 2: Verificar que fallan**
 
 Run: `npx vitest run tests/budgets-db.test.ts`
-Expected: FAIL — los exports `getBudgetsForMonth`/`upsertBudgetForUser`/`deleteBudgetForUser` no existen.
-(Si no hay `DATABASE_URL`, la suite entera se salta — ejecutar con el `.env` local presente.)
+Expected: FAIL, los exports `getBudgetsForMonth`/`upsertBudgetForUser`/`deleteBudgetForUser` no existen.
+(Si no hay `DATABASE_URL`, la suite entera se salta: ejecutar con el `.env` local presente.)
 
 - [ ] **Step 3: Implementar**
 
@@ -659,7 +659,7 @@ git commit -m "feat: getBudgetsForMonth con auto-copia del mes anterior + upsert
   - `upsertBudget(values: unknown): Promise<{ ok: true } | { ok: false; error: string }>`
   - `deleteBudget(id: unknown): Promise<{ ok: true } | { ok: false; error: string }>`
 
-Nota: los ids de estas actions SÍ pasan por Zod (`idSchema`) — item prioritario del backlog del review de C1, aplicado a las actions nuevas. (Retrofit de las actions viejas queda en backlog, fuera de C2.)
+Nota: los ids de estas actions SÍ pasan por Zod (`idSchema`), item prioritario del backlog del review de C1, aplicado a las actions nuevas. (Retrofit de las actions viejas queda en backlog, fuera de C2.)
 
 - [ ] **Step 1: Escribir los tests**
 
@@ -740,7 +740,7 @@ describe.skipIf(!process.env.DATABASE_URL)('budget actions', () => {
 - [ ] **Step 2: Verificar que fallan**
 
 Run: `npx vitest run tests/budget-actions.test.ts`
-Expected: FAIL — `Cannot find module '@/lib/budget-actions'`.
+Expected: FAIL, `Cannot find module '@/lib/budget-actions'`.
 
 - [ ] **Step 3: Implementar**
 
@@ -835,7 +835,7 @@ git commit -m "feat: budgetSchema + actions upsertBudget/deleteBudget con zod en
 
 ---
 
-### Task 6: Componentes UI — `MonthNav`, `BudgetHero`, `BudgetCategoryRow`, `BudgetDialog`
+### Task 6: Componentes UI, `MonthNav`, `BudgetHero`, `BudgetCategoryRow`, `BudgetDialog`
 
 **Files:**
 - Create: `components/growly/month-nav.tsx`
@@ -851,7 +851,7 @@ git commit -m "feat: budgetSchema + actions upsertBudget/deleteBudget con zod en
   - `MonthNav({ ym: YearMonth; basePath: string })`
   - `BudgetHero({ totals: BudgetTotals; forecast?: { projected: number; daysLeft: number } | null })`
   - `BudgetCategoryRow({ row: BudgetRowView; year: number; month: number })` con `type BudgetRowView = { budgetId: string; categoryId: string; name: string; colorHex: string; limit: number; spent: number; pct: number; over: boolean }`
-  - `BudgetDialog({ year: number; month: number; categories: { id: string; name: string }[]; initial?: BudgetFormInitial; trigger?: React.ReactElement })` con `type BudgetFormInitial = { categoryId: string; categoryName: string; amountStr: string }` — sin `initial` es "Añadir categoría" (select), con `initial` es "Editar límite" (categoría fija).
+  - `BudgetDialog({ year: number; month: number; categories: { id: string; name: string }[]; initial?: BudgetFormInitial; trigger?: React.ReactElement })` con `type BudgetFormInitial = { categoryId: string; categoryName: string; amountStr: string }`: sin `initial` es "Añadir categoría" (select), con `initial` es "Editar límite" (categoría fija).
 
 - [ ] **Step 1: Escribir los tests**
 
@@ -1007,7 +1007,7 @@ describe('BudgetDialog', () => {
 - [ ] **Step 2: Verificar que fallan**
 
 Run: `npx vitest run tests/budget-components.test.tsx tests/budget-dialog.test.tsx`
-Expected: FAIL — módulos de componentes inexistentes.
+Expected: FAIL, módulos de componentes inexistentes.
 
 - [ ] **Step 3: Implementar los cuatro componentes**
 
@@ -1319,7 +1319,7 @@ git commit -m "feat: componentes de presupuesto (MonthNav, hero, fila de categor
 ### Task 7: Página `/presupuesto`
 
 **Files:**
-- Modify: `app/(app)/presupuesto/page.tsx` (hoy es un placeholder `ComingSoon` de 2 líneas — se reemplaza entero)
+- Modify: `app/(app)/presupuesto/page.tsx` (hoy es un placeholder `ComingSoon` de 2 líneas, se reemplaza entero)
 - Test: `tests/presupuesto-page.test.tsx`
 
 **Interfaces:**
@@ -1399,7 +1399,7 @@ describe('página /presupuesto', () => {
 - [ ] **Step 2: Verificar que fallan**
 
 Run: `npx vitest run tests/presupuesto-page.test.tsx`
-Expected: FAIL — la página actual renderiza `ComingSoon` ("Presupuesto" placeholder), no hay hero ni CTA.
+Expected: FAIL, la página actual renderiza `ComingSoon` ("Presupuesto" placeholder), no hay hero ni CTA.
 
 - [ ] **Step 3: Implementar la página**
 
@@ -1515,7 +1515,7 @@ git commit -m "feat: página /presupuesto con selector de mes, hero y categoría
 
 ---
 
-### Task 8: Dashboard — resumen en `getDashboardData` + `BudgetCard`
+### Task 8: Dashboard, resumen en `getDashboardData` + `BudgetCard`
 
 **Files:**
 - Create: `components/growly/budget-card.tsx`
@@ -1586,7 +1586,7 @@ Nota del segundo test: cuando el badge y una categoría del top comparten texto 
 - [ ] **Step 2: Verificar que fallan**
 
 Run: `npx vitest run tests/budget-card.test.tsx`
-Expected: FAIL — `Cannot find module '@/components/growly/budget-card'`.
+Expected: FAIL, `Cannot find module '@/components/growly/budget-card'`.
 
 - [ ] **Step 3: Implementar `BudgetCard`**
 
@@ -1718,10 +1718,10 @@ describe.skipIf(!process.env.DATABASE_URL)('getDashboardData · budget', () => {
 })
 ```
 
-(`describe`/`beforeAll`/`afterAll`/`it`/`expect` ya están importados de vitest en ese archivo; `getDashboardData` y `prisma` puede que también — comprobar y no duplicar imports.)
+(`describe`/`beforeAll`/`afterAll`/`it`/`expect` ya están importados de vitest en ese archivo; `getDashboardData` y `prisma` puede que también: comprobar y no duplicar imports.)
 
 Run: `npx vitest run tests/dashboard.test.ts`
-Expected: FAIL — `d.budget` es `undefined`.
+Expected: FAIL, `d.budget` es `undefined`.
 
 2. En `lib/dashboard.ts`:
 
@@ -1785,7 +1785,7 @@ En `app/(app)/page.tsx`:
 import { BudgetCard } from '@/components/growly/budget-card'
 ```
 
-2. Reemplazar la fila de dos columnas (el `div` con `className="grid gap-4 md:grid-cols-2"` que contiene `<CategoryDonut …/>` y el card "Próximos pagos") por una fila de tres columnas — el contenido del card "Próximos pagos" queda idéntico, solo cambia el grid y se añade el BudgetCard delante:
+2. Reemplazar la fila de dos columnas (el `div` con `className="grid gap-4 md:grid-cols-2"` que contiene `<CategoryDonut …/>` y el card "Próximos pagos") por una fila de tres columnas: el contenido del card "Próximos pagos" queda idéntico, solo cambia el grid y se añade el BudgetCard delante:
 
 ```tsx
       <div className="grid gap-4 md:grid-cols-3">
@@ -1828,7 +1828,7 @@ git commit -m "feat: card de presupuesto en el dashboard con resumen en getDashb
 
 ---
 
-### Task 9: e2e — crear presupuesto, ver progreso con un gasto y card del dashboard
+### Task 9: e2e, crear presupuesto, ver progreso con un gasto y card del dashboard
 
 **Files:**
 - Test: `tests/e2e/presupuesto.spec.ts`

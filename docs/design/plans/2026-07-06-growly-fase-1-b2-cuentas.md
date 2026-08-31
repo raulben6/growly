@@ -1,8 +1,8 @@
-# Growly Fase 1 · B2 — Cuentas y Tarjetas · Implementation Plan
+# Growly Fase 1 · B2: Cuentas y Tarjetas · Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Que el usuario pueda crear, ver y archivar sus cuentas y tarjetas de crédito, con el patrimonio neto y la utilización de tarjeta calculados en vivo — reemplazando el placeholder de `/cuentas` por la página real.
+**Goal:** Que el usuario pueda crear, ver y archivar sus cuentas y tarjetas de crédito, con el patrimonio neto y la utilización de tarjeta calculados en vivo, reemplazando el placeholder de `/cuentas` por la página real.
 
 **Architecture:** Lógica de datos en `lib/accounts.ts` como funciones que reciben `userId` explícito (testeables contra la DB, reutilizan `lib/balances` de B1). Encima, `lib/account-actions.ts` expone Server Actions delgadas (`'use server'`) que sacan el `userId` de `auth()`, validan con Zod y revalidan la ruta. La UI son Server Components que leen datos + un diálogo cliente (Base UI) para el alta.
 
@@ -15,7 +15,7 @@
 - **Modelo `Account` unificado** (`AccountType`: `CHECKING|SAVINGS|CASH|CREDIT_CARD`); campos de tarjeta (`creditLimit`, `statementDay`, `dueDay`, `apr`, `minPayment`) solo aplican a `CREDIT_CARD`.
 - **Multi-tenant estricto:** toda consulta y mutación filtra por `userId` (obtenido de `auth()`), nunca confía en un id del cliente.
 - **UI en español**, formato numérico `en-US`, tokens del design system (`text-acc`, `bg-forest`, `text-destructive`, `shadow-[var(--shadow-card)]`, etc.). El schema NO guarda número de cuenta/tarjeta → subtítulo = banco; la tarjeta muestra dígitos genéricos `····` (estético).
-- **`.env` es local y gitignored** — nunca tocarlo/commitearlo. `session.user.id` ya existe (fix de Fase 0).
+- **`.env` es local y gitignored**: nunca tocarlo/commitearlo. `session.user.id` ya existe (fix de Fase 0).
 - **Tests:** Vitest TDD; los que tocan DB corren gracias a `dotenv` en `tests/setup.ts` y limpian lo que crean. Commits en español `feat:`/`test:`.
 
 ---
@@ -59,7 +59,7 @@ tests/
 
 - [ ] **Step 1: Añadir el schema a `lib/validators.ts`**
 
-Añade al final de `lib/validators.ts` (mantén lo existente — `registerSchema`, `loginSchema`):
+Añade al final de `lib/validators.ts` (mantén lo existente: `registerSchema`, `loginSchema`):
 
 ```ts
 export const accountSchema = z.object({
@@ -178,7 +178,7 @@ git commit -m "feat: lib/accounts — crear, listar y archivar cuentas"
 
 ---
 
-### Task 2: `getAccountsWithBalances` — saldos y patrimonio neto
+### Task 2: `getAccountsWithBalances`, saldos y patrimonio neto
 
 **Files:**
 - Modify: `lib/accounts.ts`
@@ -188,7 +188,7 @@ git commit -m "feat: lib/accounts — crear, listar y archivar cuentas"
 - Consumes: `prisma`; `accountBalance`, `cardUtilization`, `netWorth`, tipos `AccountInput as BalanceAccount`, `TxInput` de `@/lib/balances`.
 - Produces:
   - `type AccountWithBalance = Account & { balance: number; utilization: { used: number; available: number; pct: number } | null }`
-  - `getAccountsWithBalances(userId: string): Promise<{ accounts: AccountWithBalance[]; netWorth: number }>` — para cuentas normales `balance = accountBalance`; para tarjetas `balance = -used` y `utilization` poblado; `netWorth` global.
+  - `getAccountsWithBalances(userId: string): Promise<{ accounts: AccountWithBalance[]; netWorth: number }>`: para cuentas normales `balance = accountBalance`; para tarjetas `balance = -used` y `utilization` poblado; `netWorth` global.
 
 - [ ] **Step 1: Escribir el test (debe fallar)**
 
@@ -298,8 +298,8 @@ git commit -m "feat: getAccountsWithBalances — saldos por cuenta y patrimonio 
 **Interfaces:**
 - Consumes: `auth` de `@/lib/auth`; `accountSchema` de `@/lib/validators`; `createAccountForUser`, `archiveAccountForUser` de `@/lib/accounts`; `revalidatePath` de `next/cache`.
 - Produces:
-  - `createAccount(values: unknown): Promise<{ ok: true } | { ok: false; error: string }>` — valida con `accountSchema`, saca `userId` de `auth()`, crea, revalida `/cuentas`.
-  - `archiveAccount(accountId: string): Promise<{ ok: true } | { ok: false; error: string }>` — saca `userId` de `auth()`, archiva, revalida `/cuentas`.
+  - `createAccount(values: unknown): Promise<{ ok: true } | { ok: false; error: string }>`: valida con `accountSchema`, saca `userId` de `auth()`, crea, revalida `/cuentas`.
+  - `archiveAccount(accountId: string): Promise<{ ok: true } | { ok: false; error: string }>`: saca `userId` de `auth()`, archiva, revalida `/cuentas`.
 
 - [ ] **Step 1: Escribir el test (debe fallar)**
 
@@ -414,8 +414,8 @@ git commit -m "feat: server actions de cuentas (createAccount, archiveAccount)"
 **Interfaces:**
 - Consumes: `Money` de `@/components/growly/money`; `formatMoney` de `@/lib/money`; `cn` de `@/lib/utils`; `lucide-react` iconos.
 - Produces:
-  - `<AccountRow name={string} subtitle={string} balance={number} icon?={ReactNode} />` — fila con nombre, subtítulo (banco) e importe (`<Money>`).
-  - `<CreditCardView name={string} used={number} limit={number} pct={number} />` — tarjeta oscura con `····` genérico, saldo usado, límite e indicador de utilización (barra + %); el % en `text-destructive` si `pct >= 90`, si no en blanco.
+  - `<AccountRow name={string} subtitle={string} balance={number} icon?={ReactNode} />`: fila con nombre, subtítulo (banco) e importe (`<Money>`).
+  - `<CreditCardView name={string} used={number} limit={number} pct={number} />`: tarjeta oscura con `····` genérico, saldo usado, límite e indicador de utilización (barra + %); el % en `text-destructive` si `pct >= 90`, si no en blanco.
 
 - [ ] **Step 1: Escribir el test (debe fallar)**
 
@@ -556,7 +556,7 @@ git commit -m "feat: componentes AccountRow y CreditCardView"
 
 **Interfaces:**
 - Consumes: el componente `Dialog` de shadcn/Base UI; `Button`, `Input`, `Label`; `createAccount` de `@/lib/account-actions`; `parseAmountToCents` de `@/lib/money`.
-- Produces: `<AccountDialog />` — botón "Añadir cuenta" que abre un diálogo con el formulario (nombre, banco, tipo con `<select>` nativo estilizado, saldo inicial; si tipo = `CREDIT_CARD`, muestra también límite). Al enviar llama a `createAccount` con los importes convertidos a centavos vía `parseAmountToCents`; cierra en éxito.
+- Produces: `<AccountDialog />`, botón "Añadir cuenta" que abre un diálogo con el formulario (nombre, banco, tipo con `<select>` nativo estilizado, saldo inicial; si tipo = `CREDIT_CARD`, muestra también límite). Al enviar llama a `createAccount` con los importes convertidos a centavos vía `parseAmountToCents`; cierra en éxito.
 
 - [ ] **Step 1: Instalar el primitivo dialog**
 
@@ -729,7 +729,7 @@ git commit -m "feat: diálogo de alta de cuenta (Base UI)"
 
 **Interfaces:**
 - Consumes: `auth` de `@/lib/auth`; `getAccountsWithBalances` de `@/lib/accounts`; `Money`, `AccountRow`, `CreditCardView`, `AccountDialog`; `formatMoney`.
-- Produces: la página `/cuentas` — cabecera "Patrimonio neto" (grande, centrada), botón `<AccountDialog/>`, sección "CUENTAS" (cuentas no-tarjeta con `<AccountRow>`), sección "TARJETAS" (`<CreditCardView>` por cada `CREDIT_CARD`), estado vacío si no hay cuentas.
+- Produces: la página `/cuentas`, cabecera "Patrimonio neto" (grande, centrada), botón `<AccountDialog/>`, sección "CUENTAS" (cuentas no-tarjeta con `<AccountRow>`), sección "TARJETAS" (`<CreditCardView>` por cada `CREDIT_CARD`), estado vacío si no hay cuentas.
 
 - [ ] **Step 1: Implementar `app/(app)/cuentas/page.tsx`**
 

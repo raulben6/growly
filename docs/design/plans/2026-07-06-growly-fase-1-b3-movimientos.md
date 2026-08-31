@@ -1,4 +1,4 @@
-# Growly Fase 1 · B3 — Movimientos · Implementation Plan
+# Growly Fase 1 · B3: Movimientos · Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -16,7 +16,7 @@
 - **Categorías:** las 20 del sistema (`userId=null`, sembradas) + las propias del usuario. Los `icon` son nombres lucide; **debe haber fallback** para nombres desconocidos (y `paw` debe resolver a `PawPrint`).
 - **UI español**, formato `en-US`, tokens del design system. Fechas mostradas en español (`Hoy`/`Ayer`/`D MMM`).
 - **Funciones puras** sin `Date.now()`/`new Date()` interno: el "ahora" se pasa como parámetro.
-- **`.env` local/gitignored** — nunca tocar. **Convención de tests de DB** (del review de B2): email único por archivo, limpiar SOLO por `userId`/`email` propio, nunca `contains`. Tests de DB corren (dotenv) y limpian lo suyo.
+- **`.env` local/gitignored**: nunca tocar. **Convención de tests de DB** (del review de B2): email único por archivo, limpiar SOLO por `userId`/`email` propio, nunca `contains`. Tests de DB corren (dotenv) y limpian lo suyo.
 - Commits en español `feat:`/`test:`.
 
 ---
@@ -62,7 +62,7 @@ tests/
   - `createTransactionForUser(userId: string, data: TransactionFormValues): Promise<Transaction>`
   - `getTransactionsForUser(userId: string, opts?: { kind?: 'INCOME' | 'EXPENSE' }): Promise<Transaction[]>` (orden `date desc`; `kind` filtra por `type`).
   - `deleteTransactionForUser(userId: string, id: string): Promise<{ count: number }>`
-  - `groupTransactionsByDay<T extends { date: Date }>(txns: T[], now: Date): { label: string; items: T[] }[]` — puro; etiqueta `Hoy` / `Ayer` / `D MMM` (español, ej. `4 jul`), grupos en orden de fecha desc.
+  - `groupTransactionsByDay<T extends { date: Date }>(txns: T[], now: Date): { label: string; items: T[] }[]`: puro; etiqueta `Hoy` / `Ayer` / `D MMM` (español, ej. `4 jul`), grupos en orden de fecha desc.
 
 - [ ] **Step 1: Añadir `transactionSchema` a `lib/validators.ts`**
 
@@ -229,7 +229,7 @@ git commit -m "feat: lib/transactions — CRUD de movimientos y agrupación por 
 
 ---
 
-### Task 2: `lib/categories.ts` — categorías del usuario
+### Task 2: `lib/categories.ts`, categorías del usuario
 
 **Files:**
 - Create: `lib/categories.ts`
@@ -237,7 +237,7 @@ git commit -m "feat: lib/transactions — CRUD de movimientos y agrupación por 
 
 **Interfaces:**
 - Consumes: `prisma`.
-- Produces: `getCategoriesForUser(userId: string): Promise<Category[]>` — categorías del sistema (`userId=null`) + las del usuario, ordenadas por `name asc`.
+- Produces: `getCategoriesForUser(userId: string): Promise<Category[]>`, categorías del sistema (`userId=null`) + las del usuario, ordenadas por `name asc`.
 
 - [ ] **Step 1: Escribir el test (debe fallar)**
 
@@ -310,8 +310,8 @@ git commit -m "feat: lib/categories — categorías del sistema y del usuario"
 **Interfaces:**
 - Consumes: `auth`; `transactionSchema`; `createTransactionForUser`, `deleteTransactionForUser`; `revalidatePath`.
 - Produces:
-  - `createTransaction(values: unknown): Promise<{ ok: true } | { ok: false; error: string }>` — auth guard, valida, crea, revalida `/movimientos`, `/cuentas` y `/`.
-  - `deleteTransaction(id: string): Promise<{ ok: true } | { ok: false; error: string }>` — auth guard, borra, revalida las mismas rutas.
+  - `createTransaction(values: unknown): Promise<{ ok: true } | { ok: false; error: string }>`: auth guard, valida, crea, revalida `/movimientos`, `/cuentas` y `/`.
+  - `deleteTransaction(id: string): Promise<{ ok: true } | { ok: false; error: string }>`: auth guard, borra, revalida las mismas rutas.
 
 - [ ] **Step 1: Escribir el test (debe fallar)**
 
@@ -435,7 +435,7 @@ git commit -m "feat: server actions de movimientos (createTransaction, deleteTra
 
 ---
 
-### Task 4: Componentes — `CategoryIcon`, `TransactionRow`, `<Money signed>`
+### Task 4: Componentes, `CategoryIcon`, `TransactionRow`, `<Money signed>`
 
 **Files:**
 - Create: `components/growly/category-icon.tsx`, `components/growly/transaction-row.tsx`
@@ -445,9 +445,9 @@ git commit -m "feat: server actions de movimientos (createTransaction, deleteTra
 **Interfaces:**
 - Consumes: `lucide-react`; `SignedAmount` de `@/components/growly/money`; `cn`.
 - Produces:
-  - `<CategoryIcon name={string} size?={number} />` — mapea un nombre lucide (`home`, `utensils`, `paw`→PawPrint, …) a su icono; **fallback** `Circle` para nombres desconocidos.
-  - `<TransactionRow description={string} meta={string} signedCents={number} iconName?={string} />` — fila: icono de categoría, descripción, meta (`categoría · hora`), importe con `<SignedAmount>`.
-  - `<Money>` acepta `signed?: boolean` — cuando `true` y `cents < 0`, antepone `−` (positivos sin signo). Default `false` (comportamiento actual: magnitud).
+  - `<CategoryIcon name={string} size?={number} />`: mapea un nombre lucide (`home`, `utensils`, `paw`→PawPrint, …) a su icono; **fallback** `Circle` para nombres desconocidos.
+  - `<TransactionRow description={string} meta={string} signedCents={number} iconName?={string} />`: fila: icono de categoría, descripción, meta (`categoría · hora`), importe con `<SignedAmount>`.
+  - `<Money>` acepta `signed?: boolean`: cuando `true` y `cents < 0`, antepone `−` (positivos sin signo). Default `false` (comportamiento actual: magnitud).
 
 - [ ] **Step 1: Escribir el test (debe fallar)**
 
@@ -517,7 +517,7 @@ export function CategoryIcon({ name, size = 19 }: { name: string; size?: number 
 }
 ```
 
-Update `components/growly/money.tsx` — add the `signed` prop to `Money` (keep `SignedAmount` unchanged):
+Update `components/growly/money.tsx`: add the `signed` prop to `Money` (keep `SignedAmount` unchanged):
 
 ```tsx
 export function Money({
@@ -572,7 +572,7 @@ export function TransactionRow({
 }
 ```
 
-Update `components/growly/account-row.tsx` — render the balance with sign (change only the `<Money>` usage):
+Update `components/growly/account-row.tsx`: render the balance with sign (change only the `<Money>` usage):
 
 ```tsx
 <Money cents={balance} signed className="text-base font-extrabold text-foreground" />
@@ -581,7 +581,7 @@ Update `components/growly/account-row.tsx` — render the balance with sign (cha
 - [ ] **Step 4: Ejecutar y ver pasar**
 
 Run: `npm test -- tests/transaction-components.test.tsx`
-Expected: PASS. Then run the full suite `npm test` — the existing `account-components.test.tsx` (`$12,340.00` positive) still passes because `signed` adds no prefix to positives.
+Expected: PASS. Then run the full suite `npm test`, the existing `account-components.test.tsx` (`$12,340.00` positive) still passes because `signed` adds no prefix to positives.
 
 - [ ] **Step 5: Commit**
 
@@ -809,7 +809,7 @@ git commit -m "feat: diálogo Añadir movimiento (gasto/ingreso/transferencia)"
 
 **Interfaces:**
 - Consumes: `auth`; `getTransactionsForUser`, `groupTransactionsByDay` de `@/lib/transactions`; `getAccountsForUser` de `@/lib/accounts`; `getCategoriesForUser` de `@/lib/categories`; `TransactionRow`, `TransactionDialog`.
-- Produces: `/movimientos` — título, chips de filtro (Todos / Ingresos / Gastos vía `?tipo=`), botón `<TransactionDialog>`, lista agrupada por día con `<TransactionRow>` (importe con signo según tipo), estado vacío.
+- Produces: `/movimientos`, título, chips de filtro (Todos / Ingresos / Gastos vía `?tipo=`), botón `<TransactionDialog>`, lista agrupada por día con `<TransactionRow>` (importe con signo según tipo), estado vacío.
 
 - [ ] **Step 1: Implementar `app/(app)/movimientos/page.tsx`**
 

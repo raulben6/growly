@@ -1,4 +1,4 @@
-# Growly · Fase 3 — Inteligencia (Reportes · Alertas · Notificaciones)
+# Growly · Fase 3: Inteligencia (Reportes · Alertas · Notificaciones)
 
 **Fecha:** 2026-07-14 · **Estado:** aprobada por el usuario
 **Precedentes:** `2026-07-05-growly-mvp-design.md` (Fase 0+1) y `2026-07-08-growly-fase-2-design.md`
@@ -32,16 +32,16 @@ puras testeables en `lib/`, server actions con Zod (ids incluidos) + try/catch +
 
 ## 3. Referencias de diseño (Claude Design, projectId `fc0d7a55-095b-4ca7-b546-31cfd561f70c`)
 
-- **`Growly App.dc.html`** — pantalla **Reportes** (`isReportes`): toggle "6 meses | Año", card
+- **`Growly App.dc.html`**: pantalla **Reportes** (`isReportes`): toggle "6 meses | Año", card
   "Ingresos vs Gastos" (barras agrupadas verde `#10b981` / rojo `#c9584f` por mes, mes actual en
   negrita), dos KPI tiles ("Tasa de ahorro 37% · +5 pts vs jun" en verde acc; "Gasto medio/día $125 ·
   −$8 vs jun"), card "Top categorías" (nombre, importe, barra proporcional con el color de la categoría,
   la mayor al 100%).
-- **`Growly App.dc.html`** — pantalla **Notificaciones** (`isNotif`): chips "Todas | No leídas · 3",
+- **`Growly App.dc.html`**: pantalla **Notificaciones** (`isNotif`): chips "Todas | No leídas · 3",
   tarjetas con icono 40px tintado por tipo (rojo tarjeta, ámbar "!" presupuesto, verde ingreso), título
   bold, cuerpo muted, tiempo relativo ("Hace 2 h", "Hoy · 09:12", "Ayer"), dot verde de no-leída,
   leídas con `opacity:.62`. La tarjeta "Nuevo inicio de sesión" del diseño queda FUERA (seguridad, no finanzas).
-- **`Growly Web.dc.html`** — dashboard: card **"Flujo de caja · Últimos 6 meses"** (toggle 6M/1A,
+- **`Growly Web.dc.html`**: dashboard: card **"Flujo de caja · Últimos 6 meses"** (toggle 6M/1A,
   SVG línea de ingresos `#10b981` grosor 3 con área `rgba(16,185,129,.1)` + línea de gastos `#c9584f`
   punteada `2 5`, 3 gridlines, etiquetas de mes abajo con el actual en negrita) en fila
   `1.8fr / 1fr` junto al donut de Categorías; KPIs con delta "▲ 8% vs jun" / "▼ 4% vs jun"; campana
@@ -79,7 +79,7 @@ model Notification {
 
 ## 5. Motor de alertas (D2)
 
-### 5.1 `lib/alerts.ts` — puro
+### 5.1 `lib/alerts.ts`: puro
 
 `alertCandidates(input, now)` recibe datos ya cargados y devuelve
 `{ type, title, body, dedupeKey }[]`. Reglas y claves (mes en formato `YYYY-MM` humano):
@@ -104,15 +104,15 @@ Notas:
 - Helper puro `relativeTimeLabel(date, now)` → "Ahora" (<1 min) · "Hace N min" · "Hace N h" ·
   "Ayer" · "D mes" (getters UTC para fechas, local para el corte de "hoy", como el resto).
 
-### 5.2 `lib/notifications.ts` — acceso a datos (scoped por userId)
+### 5.2 `lib/notifications.ts`: acceso a datos (scoped por userId)
 
 - `evaluateAlertsForUser(userId, now)`:
   1. Carga presupuesto del mes (con `getBudgetsForMonth` + `budgetProgress` sobre txns),
      PENDING del usuario y tarjetas con `used` (de `getAccountsWithBalances`).
   2. `alertCandidates(...)` → `createMany({ data, skipDuplicates: true })` apoyado en el
-     unique `[userId, dedupeKey]` — idempotente y barato (patrón materialize de C1).
+     unique `[userId, dedupeKey]`: idempotente y barato (patrón materialize de C1).
   3. Si no hay candidatas, no escribe.
-- `getNotificationsForUser(userId, { unreadOnly? })` — orden `createdAt` desc.
+- `getNotificationsForUser(userId, { unreadOnly? })`: orden `createdAt` desc.
 - `getUnreadCountForUser(userId)`.
 - `markNotificationReadForUser(userId, id)` (updateMany + userId, `readAt: now`),
   `markAllNotificationsReadForUser(userId)`.
@@ -135,7 +135,7 @@ Notas:
 
 ## 6. Reportes (D1)
 
-### 6.1 `lib/reports.ts` — puro
+### 6.1 `lib/reports.ts`: puro
 
 - `monthlySeries(txns, now, months)` → `[{ year, month, income, expense }]` de los últimos
   `months` meses terminando en el actual (CLEARED only, reutiliza la semántica de `monthlyTotals`;
@@ -178,7 +178,7 @@ Notas:
 Mismo esquema (Vitest + RTL unit, `.skipIf(!DATABASE_URL)` para DB, Playwright e2e, reloj fijado
 `toFake:['Date']` donde "hoy" importe):
 
-- **Alertas (lo más importante):** `alertCandidates` — cada regla con sus umbrales exactos
+- **Alertas (lo más importante):** `alertCandidates`, cada regla con sus umbrales exactos
   (84→nada, 85→WARN, 100→WARN, 101→OVER; vence en 3 días→DUE, en 4→nada, ayer→OVERDUE;
   tarjeta con used 0→nada, dueDay a 6 días→nada, a 5→CARD_DUE, ajuste 31→fin de mes), claves
   estables y copys. `relativeTimeLabel` (minutos/horas/ayer/fecha).

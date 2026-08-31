@@ -1,8 +1,8 @@
-# Growly Fase 1 · B4 — Dashboard · Implementation Plan
+# Growly Fase 1 · B4: Dashboard · Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Reemplazar el placeholder de "Inicio" por el dashboard real: saldo disponible, KPIs del mes (ingresos/gastos/ahorro), donut de gastos por categoría, próximos pagos y movimientos recientes — todo derivado de los datos de B2/B3 — cerrando el MVP núcleo de la Fase 1.
+**Goal:** Reemplazar el placeholder de "Inicio" por el dashboard real: saldo disponible, KPIs del mes (ingresos/gastos/ahorro), donut de gastos por categoría, próximos pagos y movimientos recientes, todo derivado de los datos de B2/B3, cerrando el MVP núcleo de la Fase 1.
 
 **Architecture:** Agregaciones puras en `lib/dashboard.ts` (testeables sin DB) + un `getDashboardData(userId, now)` que reúne cuentas (con saldos de B2), movimientos y categorías (B3) y computa todo de una. Componentes de presentación (`BalanceHero`, `KpiCard`, `CategoryDonut`) + la página `/` como Server Component. Reutiliza `Money`/`SignedAmount` (B1) y `TransactionRow` (B3).
 
@@ -16,7 +16,7 @@
 - **Multi-tenant:** todo por `userId` de `auth()`.
 - **Agregaciones puras** sin `Date.now()`/`new Date()` internos; el `now` se pasa como parámetro (la página lo inyecta con `new Date()`).
 - **UI español**, formato `en-US`, tokens del design system (hero `bg-forest`, `text-acc`, etc.).
-- **`.env` local/gitignored** — nunca tocar. Convención de tests de DB (email único por archivo, limpiar por `userId`). Commits `feat:`/`test:`.
+- **`.env` local/gitignored**: nunca tocar. Convención de tests de DB (email único por archivo, limpiar por `userId`). Commits `feat:`/`test:`.
 
 ---
 
@@ -39,7 +39,7 @@ tests/
 
 ---
 
-### Task 1: `lib/dashboard.ts` — agregaciones puras
+### Task 1: `lib/dashboard.ts`, agregaciones puras
 
 **Files:**
 - Create: `lib/dashboard.ts`
@@ -49,10 +49,10 @@ tests/
 - Consumes: nada (funciones puras sobre objetos planos).
 - Produces:
   - `type DashTx = { type: 'INCOME'|'EXPENSE'|'TRANSFER'; amount: number; date: Date; categoryId?: string|null; status?: 'CLEARED'|'PENDING' }`
-  - `monthlyTotals(txns: DashTx[], year: number, month: number): { income: number; expense: number; savings: number; savingsRate: number }` — sólo CLEARED del mes; `savings = income − expense`; `savingsRate = income>0 ? round(savings/income*100) : 0`.
-  - `categoryBreakdown(txns: DashTx[], categories: { id: string; name: string; colorHex: string }[], year: number, month: number): { id: string; name: string; colorHex: string; total: number }[]` — gastos CLEARED del mes agrupados por `categoryId`, unidos a nombre/color (sin categoría → `{ id:'none', name:'Otros', colorHex:'#8A857E' }`), orden desc por total.
-  - `upcomingPayments<T extends { date: Date; status?: 'CLEARED'|'PENDING' }>(txns: T[], now: Date, limit?: number): T[]` — `status==='PENDING'` y `date >= now`, orden asc por fecha, `limit` (default 3).
-  - `recentTransactions<T extends { date: Date }>(txns: T[], limit?: number): T[]` — orden desc por fecha, primeros `limit` (default 5).
+  - `monthlyTotals(txns: DashTx[], year: number, month: number): { income: number; expense: number; savings: number; savingsRate: number }`: sólo CLEARED del mes; `savings = income − expense`; `savingsRate = income>0 ? round(savings/income*100): 0`.
+  - `categoryBreakdown(txns: DashTx[], categories: { id: string; name: string; colorHex: string }[], year: number, month: number): { id: string; name: string; colorHex: string; total: number }[]`: gastos CLEARED del mes agrupados por `categoryId`, unidos a nombre/color (sin categoría → `{ id:'none', name:'Otros', colorHex:'#8A857E' }`), orden desc por total.
+  - `upcomingPayments<T extends { date: Date; status?: 'CLEARED'|'PENDING' }>(txns: T[], now: Date, limit?: number): T[]`: `status==='PENDING'` y `date >= now`, orden asc por fecha, `limit` (default 3).
+  - `recentTransactions<T extends { date: Date }>(txns: T[], limit?: number): T[]`: orden desc por fecha, primeros `limit` (default 5).
 
 - [ ] **Step 1: Escribir el test (debe fallar)**
 
@@ -199,7 +199,7 @@ git commit -m "feat: lib/dashboard — agregaciones del dashboard (totales, cate
 
 ---
 
-### Task 2: `getDashboardData(userId, now)` — integración
+### Task 2: `getDashboardData(userId, now)`, integración
 
 **Files:**
 - Modify: `lib/dashboard.ts`
@@ -317,7 +317,7 @@ git commit -m "feat: getDashboardData — reúne saldos, KPIs, categorías y pr�
 
 ---
 
-### Task 3: Componentes — `BalanceHero`, `KpiCard`, `CategoryDonut`
+### Task 3: Componentes, `BalanceHero`, `KpiCard`, `CategoryDonut`
 
 **Files:**
 - Create: `components/growly/balance-hero.tsx`, `components/growly/kpi-card.tsx`, `components/growly/category-donut.tsx`
@@ -326,9 +326,9 @@ git commit -m "feat: getDashboardData — reúne saldos, KPIs, categorías y pr�
 **Interfaces:**
 - Consumes: `Money` de `@/components/growly/money`; `formatMoney` de `@/lib/money`; `cn`; `lucide-react`.
 - Produces:
-  - `<BalanceHero disponible={number} total={number} comprometido={number} />` — tarjeta `bg-forest`: "Saldo disponible" grande + "Total" + "Comprometido".
-  - `<KpiCard label={string} cents={number} accent?={'income'|'expense'|'neutral'} subtitle?={string} />` — tarjeta con etiqueta, importe (`<Money>`) y subtítulo.
-  - `<CategoryDonut breakdown={{ id:string; name:string; colorHex:string; total:number }[]} />` — donut conic-gradient con leyenda; centro muestra el total gastado. Estado vacío si `breakdown` está vacío.
+  - `<BalanceHero disponible={number} total={number} comprometido={number} />`: tarjeta `bg-forest`: "Saldo disponible" grande + "Total" + "Comprometido".
+  - `<KpiCard label={string} cents={number} accent?={'income'|'expense'|'neutral'} subtitle?={string} />`: tarjeta con etiqueta, importe (`<Money>`) y subtítulo.
+  - `<CategoryDonut breakdown={{ id:string; name:string; colorHex:string; total:number }[]} />`: donut conic-gradient con leyenda; centro muestra el total gastado. Estado vacío si `breakdown` está vacío.
 
 - [ ] **Step 1: Escribir el test (debe fallar)**
 
@@ -521,7 +521,7 @@ git commit -m "feat: componentes BalanceHero, KpiCard y CategoryDonut"
 
 **Interfaces:**
 - Consumes: `auth`; `getDashboardData` de `@/lib/dashboard`; `BalanceHero`, `KpiCard`, `CategoryDonut`, `TransactionRow` (B3); `Money`.
-- Produces: la página `/` — `BalanceHero`, fila de 3 `KpiCard` (Ingresos/Gastos/Ahorro del mes), `CategoryDonut`, tarjeta "Próximos pagos" y tarjeta "Movimientos recientes" (con `TransactionRow`).
+- Produces: la página `/`, `BalanceHero`, fila de 3 `KpiCard` (Ingresos/Gastos/Ahorro del mes), `CategoryDonut`, tarjeta "Próximos pagos" y tarjeta "Movimientos recientes" (con `TransactionRow`).
 
 - [ ] **Step 1: Implementar `app/(app)/page.tsx`**
 
