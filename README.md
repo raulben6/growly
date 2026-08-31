@@ -2,7 +2,7 @@
 
 **A personal finance app that answers the questions a bank statement never does:** how much can I actually spend today, what's coming out of my account next week, and am I on track this month?
 
-Built as a full product rather than a CRUD demo — accounts, transactions, transfers, envelope budgets, savings goals, recurring rules, a payment calendar and alerts, all behind real authentication and covered by an extensive test suite.
+Built as a full product rather than a CRUD demo: accounts, transactions, transfers, envelope budgets, savings goals, recurring rules, a payment calendar and alerts, all behind real authentication and covered by an extensive test suite.
 
 ```
 Next.js 16 · React 19 · TypeScript · Prisma · PostgreSQL · NextAuth v5 · Tailwind v4 · Zod · Vitest · Playwright
@@ -18,7 +18,7 @@ This is where most personal-finance projects quietly go wrong, and what this one
 
 ```prisma
 model Transaction {
-  amount   Int      // minor units (cents) — never a Float
+  amount   Int      // minor units (cents), never a Float
   currency String   @default("USD")
 }
 ```
@@ -59,7 +59,7 @@ Zod schemas in `lib/validators.ts` are the single source of truth, used by both 
 |---|---|
 | **Accounts** | Multiple account types with live computed balances (`lib/balances.ts`) |
 | **Transactions** | Income, expense and transfers; pending vs. cleared status; categories and notes |
-| **Recurring rules** | Daily → yearly frequencies, optional end date, idempotent materialization |
+| **Recurring rules** | Daily to yearly frequencies, optional end date, idempotent materialization |
 | **Budgets** | Per-category monthly budgets with progress and overspend detection |
 | **Goals** | Savings targets with individual contributions tracked over time |
 | **Calendar** | Month view of what is scheduled to hit each account and when |
@@ -80,7 +80,7 @@ app/
   api/auth/        NextAuth route handler
 
 lib/
-  *-actions.ts     Server Actions — the only mutation path
+  *-actions.ts     Server Actions, the only mutation path
   accounts.ts      pure query/derivation layer
   balances.ts      balance computation
   recurrence.ts    frequency math and materialization
@@ -99,8 +99,8 @@ tests/             67 Vitest suites (unit + component)
 ## Testing
 
 ```bash
-npm test          # Vitest — 67 suites: business logic, schemas and components
-npm run test:e2e  # Playwright — end-to-end flows
+npm test          # Vitest: 67 suites covering business logic, schemas and components
+npm run test:e2e  # Playwright end-to-end flows
 ```
 
 Coverage is deliberately weighted toward the logic that handles money: balance derivation, recurrence expansion, budget rollups, and validation schemas.
@@ -126,7 +126,7 @@ npm run dev             # http://localhost:3000
 | Variable | Purpose |
 |---|---|
 | `DATABASE_URL` | PostgreSQL connection string |
-| `AUTH_SECRET` | NextAuth signing secret — generate with `openssl rand -base64 32` |
+| `AUTH_SECRET` | NextAuth signing secret. Generate with `openssl rand -base64 32` |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Optional Google sign-in |
 | `NEXT_PUBLIC_GOOGLE_ENABLED` | Toggles the Google button in the UI |
 
