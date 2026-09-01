@@ -8,6 +8,12 @@ Built as a full product rather than a CRUD demo: accounts, transactions, transfe
 Next.js 16 · React 19 · TypeScript · Prisma · PostgreSQL · NextAuth v5 · Tailwind v4 · Zod · Vitest · Playwright
 ```
 
+### ▶️ [Try it live](https://growly-three.vercel.app)
+
+[![Live demo](https://img.shields.io/badge/%F0%9F%9F%A2_live_demo-growly--three.vercel.app-10B981?style=for-the-badge)](https://growly-three.vercel.app)
+
+Create an account and the 20 default categories are seeded for you.
+
 ---
 
 ## The engineering decisions worth reading
