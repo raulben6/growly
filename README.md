@@ -8,11 +8,39 @@ Built as a full product rather than a CRUD demo: accounts, transactions, transfe
 Next.js 16 · React 19 · TypeScript · Prisma · PostgreSQL · NextAuth v5 · Tailwind v4 · Zod · Vitest · Playwright
 ```
 
-### ▶️ [Try it live](https://growly-three.vercel.app)
+### ▶️ Try it live
 
-[![Live demo](https://img.shields.io/badge/%F0%9F%9F%A2_live_demo-growly--three.vercel.app-10B981?style=for-the-badge)](https://growly-three.vercel.app)
+[![Live demo](https://img.shields.io/badge/%F0%9F%9F%A2_open_the_demo-growly--three.vercel.app-10B981?style=for-the-badge)](https://growly-three.vercel.app/login)
 
-Create an account and the 20 default categories are seeded for you.
+**No sign-up needed.** A demo account is already loaded with accounts, transactions, a budget and a savings goal:
+
+| | |
+|---|---|
+| **Email** | `demo@growly.app` |
+| **Password** | `GrowlyDemo2026` |
+
+Or register your own account: the 20 default categories are seeded for you automatically.
+
+![Dashboard](docs/screenshots/01-dashboard.png)
+
+<table>
+<tr>
+<td width="50%"><img src="docs/screenshots/02-presupuesto.png" alt="Budget with progress and projected spend"></td>
+<td width="50%"><img src="docs/screenshots/03-metas.png" alt="Savings goals with contributions"></td>
+</tr>
+<tr>
+<td><b>Budgets.</b> Spend against the limit, what is left, and a projection at the current pace.</td>
+<td><b>Goals.</b> Virtual envelopes with individual contributions tracked over time.</td>
+</tr>
+<tr>
+<td width="50%"><img src="docs/screenshots/04-movimientos.png" alt="Transactions grouped by day"></td>
+<td width="50%"><img src="docs/screenshots/05-dark-mode.png" alt="Dark mode"></td>
+</tr>
+<tr>
+<td><b>Transactions.</b> Grouped by day, filtered by type, with recurring rules in their own tab.</td>
+<td><b>Dark mode.</b> Both themes are first-class, not an inverted filter.</td>
+</tr>
+</table>
 
 ---
 
